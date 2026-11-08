@@ -15,7 +15,37 @@ import javafx.scene.input.DataFormat
 import javafx.scene.media.Media
 import javafx.scene.media.MediaPlayer
 import java.io.File
+import java.lang.reflect.InvocationTargetException
+import java.net.MalformedURLException
+import java.net.URI
+import java.net.URISyntaxException
+import java.net.URL
 import java.util.function.Predicate
+
+/**
+ * Creates a [URL] from this string through [URI], mapping syntax and
+ * absoluteness failures to [MalformedURLException] — the behavior of the
+ * Java-deprecated [URL.URL(String)] constructor, which this helper replaces.
+ */
+internal fun String.toUrlCompat(): URL = try {
+    URI(this).toURL()
+} catch (e: URISyntaxException) {
+    throw MalformedURLException(e.reason)
+} catch (e: IllegalArgumentException) {
+    throw MalformedURLException(e.message)
+}
+
+/**
+ * Creates a new instance through the no-arg constructor, rethrowing the constructor's
+ * own exception instead of [InvocationTargetException] — the behavior of the
+ * Java-deprecated [Class.newInstance], which this helper replaces.
+ */
+@PublishedApi
+internal fun <T : Any> Class<out T>.newInstanceNoArg(): T = try {
+    getDeclaredConstructor().newInstance()
+} catch (e: InvocationTargetException) {
+    throw e.cause ?: e
+}
 
 /**
  * A wrapper for an observable list of items that can be bound to a list control like TableView, ListView etc.

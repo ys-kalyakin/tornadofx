@@ -63,7 +63,7 @@ open class ViewModel : Component(), ScopedInstance {
                 if (it.wasAdded()) {
                     it.addedSubList.forEach { facade ->
                         facade.addListener { obs, _, nv ->
-                            if (validate(fields = *arrayOf(facade))) propertyMap[obs]!!.invoke()?.setValueUnchecked(nv)
+                            if (validate(fields = arrayOf(facade))) propertyMap[obs]!!.invoke()?.setValueUnchecked(nv)
                         }
                     }
                 }
@@ -124,12 +124,12 @@ open class ViewModel : Component(), ScopedInstance {
                 ObjectProperty::class.java.isAssignableFrom(propertyType) -> BindingAwareSimpleObjectProperty<T>(this, prop?.name)
 
             // Match against the type of the Property
-                java.lang.Integer::class.java.isAssignableFrom(typeParam) -> BindingAwareSimpleIntegerProperty(this, prop?.name)
-                java.lang.Long::class.java.isAssignableFrom(typeParam) -> BindingAwareSimpleLongProperty(this, prop?.name)
-                java.lang.Double::class.java.isAssignableFrom(typeParam) -> BindingAwareSimpleDoubleProperty(this, prop?.name)
-                java.lang.Float::class.java.isAssignableFrom(typeParam) -> BindingAwareSimpleFloatProperty(this, prop?.name)
-                java.lang.Boolean::class.java.isAssignableFrom(typeParam) -> BindingAwareSimpleBooleanProperty(this, prop?.name)
-                java.lang.String::class.java.isAssignableFrom(typeParam) -> BindingAwareSimpleStringProperty(this, prop?.name)
+                Int::class.javaObjectType.isAssignableFrom(typeParam) -> BindingAwareSimpleIntegerProperty(this, prop?.name)
+                Long::class.javaObjectType.isAssignableFrom(typeParam) -> BindingAwareSimpleLongProperty(this, prop?.name)
+                Double::class.javaObjectType.isAssignableFrom(typeParam) -> BindingAwareSimpleDoubleProperty(this, prop?.name)
+                Float::class.javaObjectType.isAssignableFrom(typeParam) -> BindingAwareSimpleFloatProperty(this, prop?.name)
+                Boolean::class.javaObjectType.isAssignableFrom(typeParam) -> BindingAwareSimpleBooleanProperty(this, prop?.name)
+                String::class.java.isAssignableFrom(typeParam) -> BindingAwareSimpleStringProperty(this, prop?.name)
                 ObservableList::class.java.isAssignableFrom(typeParam) -> BindingAwareSimpleListProperty<T>(this, prop?.name)
                 List::class.java.isAssignableFrom(typeParam) -> BindingAwareSimpleListProperty<T>(this, prop?.name)
                 ObservableSet::class.java.isAssignableFrom(typeParam) -> BindingAwareSimpleSetProperty<T>(this, prop?.name)
@@ -216,7 +216,7 @@ open class ViewModel : Component(), ScopedInstance {
     }
 
     fun commit(vararg fields: ObservableValue<*>, successFn: () -> Unit = {}) =
-            commit(false, true, fields = *fields, successFn = successFn)
+            commit(false, true, fields = fields, successFn = successFn)
 
     /**
      * Perform validation and flush the values into the source object if validation passes.
@@ -230,7 +230,7 @@ open class ViewModel : Component(), ScopedInstance {
 
         val commits = mutableListOf<Commit>()
         runAndWait {
-            if (!validate(focusFirstError, fields = *fields) && !force) {
+            if (!validate(focusFirstError, fields = fields) && !force) {
                 committed = false
             } else {
                 val commitThese = if (fields.isNotEmpty()) fields.toList() else propertyMap.keys

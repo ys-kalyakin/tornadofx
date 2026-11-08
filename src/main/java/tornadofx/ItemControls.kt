@@ -67,8 +67,8 @@ fun <T> EventTarget.spinner(
 
 inline fun <reified T : Number> EventTarget.spinner(min: T? = null, max: T? = null, initialValue: T? = null, amountToStepBy: T? = null, editable: Boolean = false, property: Property<T>? = null, enableScroll: Boolean = false, noinline op: Spinner<T>.() -> Unit = {}): Spinner<T> {
     val spinner: Spinner<T>
-    val isInt = (property is IntegerProperty && property !is DoubleProperty && property !is FloatProperty) || min is Int || max is Int || initialValue is Int ||
-            T::class == Int::class || T::class == Integer::class || T::class.javaPrimitiveType == Integer::class.java
+    val isInt = property is IntegerProperty || min is Int || max is Int || initialValue is Int ||
+            T::class == Int::class || T::class.javaPrimitiveType == Int::class.java
     if (isInt) {
         spinner = Spinner(min?.toInt() ?: 0, max?.toInt() ?: 100, initialValue?.toInt() ?: 0, amountToStepBy?.toInt()
                 ?: 1)
@@ -384,7 +384,7 @@ fun <S, T> TableView<S>.column(title: String, propertyName: String, op: TableCol
 @JvmName("pojoColumn")
 fun <S, T> TableView<S>.column(title: String, getter: KFunction<T>): TableColumn<S, T> {
     val startIndex = if (getter.name.startsWith("is") && getter.name[2].isUpperCase()) 2 else 3
-    val propName = getter.name.substring(startIndex).decapitalize()
+    val propName = getter.name.substring(startIndex).replaceFirstChar { it.lowercaseChar() }
     return this.column(title, propName)
 }
 
@@ -404,7 +404,7 @@ fun <S, T> TreeTableView<S>.column(title: String, propertyName: String, op: Tree
 @JvmName("pojoColumn")
 fun <S, T> TreeTableView<S>.column(title: String, getter: KFunction<T>): TreeTableColumn<S, T> {
     val startIndex = if (getter.name.startsWith("is") && getter.name[2].isUpperCase()) 2 else 3
-    val propName = getter.name.substring(startIndex).decapitalize()
+    val propName = getter.name.substring(startIndex).replaceFirstChar { it.lowercaseChar() }
     return this.column(title, propName)
 }
 

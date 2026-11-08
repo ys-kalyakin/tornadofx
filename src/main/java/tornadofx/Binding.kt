@@ -121,9 +121,13 @@ inline fun <reified S : T, reified T : Any> bindStringProperty(
             }
             val stringBinding = Bindings.createStringBinding(toStringConverter, property)
             stringProperty.bind(stringBinding)
+        } else if (effectiveConverter != null) {
+            // The cast is required for overload resolution: without it the compiler
+            // picks the Format overload and fails. K2 still reports it as redundant.
+            @Suppress("USELESS_CAST")
+            stringProperty.bindBidirectional(property as Property<S>, effectiveConverter as StringConverter<S>)
         } else when {
-            effectiveConverter != null -> stringProperty.bindBidirectional(property as Property<S>, effectiveConverter as StringConverter<S>)
-            format != null -> stringProperty.bindBidirectional(property as Property<S>, format)
+            format != null -> stringProperty.bindBidirectional(property, format)
             else -> throw IllegalArgumentException("Cannot convert from ${S::class} to String without an explicit converter or format")
         }
     }

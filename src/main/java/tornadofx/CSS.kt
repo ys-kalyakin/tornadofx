@@ -460,7 +460,7 @@ open class Stylesheet(vararg val imports: KClass<out Stylesheet>) : SelectionHol
          */
         private fun detectAndInstallUrlHandler() {
             try {
-                URL("css://content:64")
+                "css://content:64".toUrlCompat()
             } catch (ex: MalformedURLException) {
                 log.info("Installing CSS url handler, since it was not picked up automatically")
                 try {
@@ -488,7 +488,7 @@ open class Stylesheet(vararg val imports: KClass<out Stylesheet>) : SelectionHol
     val base64URL: URL
         get() {
             val content = Base64.getEncoder().encodeToString(render().toByteArray())
-            return URL("css://$content:64")
+            return "css://$content:64".toUrlCompat()
         }
 
     val externalForm: String get() = base64URL.toExternalForm()
@@ -1448,4 +1448,4 @@ fun Parent.stylesheet(op: Stylesheet.() -> Unit) {
 /**
  * Adds the [stylesheet] to the given parent.
  */
-inline fun <T: Stylesheet> Parent.addStylesheet(stylesheet: KClass<T>) = this.stylesheets.add("css://${stylesheet.java.name}")
+fun <T: Stylesheet> Parent.addStylesheet(stylesheet: KClass<T>) = this.stylesheets.add("css://${stylesheet.java.name}")

@@ -7,4 +7,10 @@ package tornadofx;
  * https://github.com/edvin/tornadofx
  */
 public class JavaDocTrap {
+
+    /**
+     * Default constructor to satisfy the javadoc tool's missing-comment check.
+     */
+    public JavaDocTrap() {
+    }
 }

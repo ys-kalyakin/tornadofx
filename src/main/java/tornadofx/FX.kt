@@ -278,17 +278,7 @@ class FX {
             if (obsolete is View) {
                 getComponents(obsolete.scope).remove(obsolete.javaClass.kotlin)
             }
-            if (obsolete is UIComponent) {
-                replacement = find(obsolete.javaClass.kotlin, obsolete.scope)
-            } else {
-                val noArgsConstructor = obsolete.javaClass.constructors.any { it.parameterCount == 0 }
-                if (noArgsConstructor) {
-                    replacement = obsolete.javaClass.newInstance()
-                } else {
-                    log.warning("Unable to reload $obsolete because it's missing a no args constructor")
-                    return
-                }
-            }
+            replacement = find(obsolete.javaClass.kotlin, obsolete.scope)
 
             (obsolete.root.parent as? Pane)?.children?.apply {
                 val index = indexOf(obsolete.root)
@@ -367,7 +357,7 @@ fun importStylesheet(stylesheet: Path) = importStylesheet(stylesheet.toUri().toS
 
 fun importStylesheet(stylesheet: String) {
     try {
-        stylesheets.add(URL(stylesheet).toExternalForm())
+        stylesheets.add(stylesheet.toUrlCompat().toExternalForm())
     } catch (noProtocolGiven: MalformedURLException) {
         // Fallback to loading classpath resource
         val css = FX::class.java.getResource(stylesheet)
@@ -413,7 +403,7 @@ fun <T : Component> find(type: KClass<T>, scope: Scope = FX.defaultScope, params
         if (!components.containsKey(type as KClass<out ScopedInstance>)) {
             synchronized(FX.lock) {
                 if (!components.containsKey(type)) {
-                    val cmp = type.java.newInstance()
+                    val cmp = type.java.newInstanceNoArg()
                     (cmp as? UIComponent)?.init()
                     // if cmp.scope overrode the scope, inject into that instead
                     if (cmp is Component && cmp.scope != useScope) {
@@ -424,11 +414,11 @@ fun <T : Component> find(type: KClass<T>, scope: Scope = FX.defaultScope, params
             }
         }
         val cmp = components[type] as T
-        cmp.paramsProperty?.value = stringKeyedMap
+        cmp.paramsProperty.value = stringKeyedMap
         return cmp
     }
 
-    val cmp = type.java.newInstance()
+    val cmp = type.java.newInstanceNoArg()
     cmp.paramsProperty.value = stringKeyedMap
     (cmp as? Fragment)?.init()
 

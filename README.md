@@ -95,22 +95,11 @@ mvn archetype:generate -DarchetypeGroupId=no.tornado \
 implementation 'no.tornado:tornadofx:1.7.20'
 ```
 
-### Snapshots are published to Sonatype
+### Snapshots
 
-Configure your build environment to use snapshots if you want to try out the latest features:
-
-```xml
- <repositories>
-   <repository>
-     <id>snapshots-repo</id>
-     <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-     <releases><enabled>false</enabled></releases>
-     <snapshots><enabled>true</enabled></snapshots>
-   </repository>
- </repositories>
-```
-
-Snapshots are published every day at GMT 16:00 if there has been any changes.
+This fork does not publish snapshot repositories. The upstream daily Sonatype
+snapshot publishing described in older documentation does not apply here; use a
+released version as shown above, or build from source with `./mvnw install`.
 
 ### What does it look like? (Code snippets)
 
