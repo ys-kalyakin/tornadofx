@@ -251,6 +251,10 @@
                 <artifactId>maven-gpg-plugin</artifactId>
                 <version>${maven.gpg.version}</version>
                 <configuration>
+                    <!-- Signing is skipped by default so local install/package
+                         works without a GPG key; release paths pass
+                         -Dgpg.skip=false. -->
+                    <skip>${gpg.skip}</skip>
                     <!-- Dedicated release signing key; its public half must be
                          on a keyserver for Central Portal validation. -->
                     <keyname>08BCB465BBE68556DE7E9368A893385C5CFEC2EE</keyname>
@@ -262,7 +266,10 @@
                 <executions>
                     <execution>
                         <id>sign-artifacts</id>
-                        <phase>deploy</phase>
+                        <!-- verify, not deploy: with the Central publishing
+                             extension installed, deploy-phase executions are
+                             bypassed and the bundle would go unsigned. -->
+                        <phase>verify</phase>
                         <goals>
                             <goal>sign</goal>
                         </goals>
@@ -372,6 +379,8 @@
         <maven.jar.version>3.5.1</maven.jar.version>
         <maven.javadoc.version>3.12.0</maven.javadoc.version>
         <maven.gpg.version>3.2.8</maven.gpg.version>
+        <!-- Signing is opt-in: releases pass -Dgpg.skip=false (CI and runbook). -->
+        <gpg.skip>true</gpg.skip>
         <maven.surefire.version>3.6.1</maven.surefire.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
