@@ -7,9 +7,9 @@ import javafx.embed.swing.JFXPanel
 import javafx.scene.layout.VBox
 import javafx.util.StringConverter
 import javafx.util.converter.NumberStringConverter
-import org.junit.Assert
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions as Assert
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.testfx.api.FxToolkit
 import tornadofx.*
 import java.text.NumberFormat
@@ -25,7 +25,7 @@ class TestView : View() {
 
 class ControlsTest {
 
-    @Before
+    @BeforeEach
     fun setupFX() {
         FxToolkit.registerPrimaryStage()
     }
@@ -71,7 +71,7 @@ class ControlsTest {
         val property = SimpleStringProperty("Daan")
         val label = view.label(property)
         val labelWithConverter = view.label(property, converter = object : StringConverter<String>() {
-            override fun toString(string: String?) = string?.toUpperCase() ?: ""
+            override fun toString(string: String?) = string?.uppercase() ?: ""
             override fun fromString(string: String?) = throw NotImplementedError()
         })
 

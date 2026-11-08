@@ -7,34 +7,39 @@ import javafx.scene.control.TextField
 import javafx.scene.layout.Pane
 import javafx.scene.layout.VBox
 import javafx.stage.Stage
-import org.junit.Assert
-import org.junit.Test
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions as Assert
+import org.junit.jupiter.api.Test
 import org.testfx.api.FxToolkit
 import tornadofx.*
 
 class FXMLTest {
     val primaryStage: Stage = FxToolkit.registerPrimaryStage()
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun wrongFXId() {
-        object : Fragment() {
-            override val root: VBox by fxml("/tornadofx/tests/FXMLTest.fxml")
-            val myLabelx : Label by fxid()
+        Assertions.assertThrows(IllegalArgumentException::class.java) {
+            object : Fragment() {
+                override val root: VBox by fxml("/tornadofx/tests/FXMLTest.fxml")
+                val myLabelx : Label by fxid()
 
-            init {
-                myLabelx.text = "Expect log warning and RuntimeException"
+                init {
+                    myLabelx.text = "Expect log warning and RuntimeException"
+                }
             }
         }
     }
 
-    @Test(expected = ClassCastException::class)
+    @Test
     fun wrongFXType() {
-        object : Fragment() {
-            override val root: VBox by fxml("/tornadofx/tests/FXMLTest.fxml")
-            val myLabel : TextField by fxid()
+        Assertions.assertThrows(ClassCastException::class.java) {
+            object : Fragment() {
+                override val root: VBox by fxml("/tornadofx/tests/FXMLTest.fxml")
+                val myLabel : TextField by fxid()
 
-            init {
-                myLabel.text = "Expect ClassCastException"
+                init {
+                    myLabel.text = "Expect ClassCastException"
+                }
             }
         }
     }

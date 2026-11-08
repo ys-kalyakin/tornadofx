@@ -5,8 +5,8 @@ import javafx.scene.control.TableColumn
 import javafx.scene.layout.HBox
 import javafx.scene.layout.StackPane
 import javafx.stage.Stage
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.testfx.api.FxToolkit
 import tornadofx.*
 import kotlin.test.assertEquals
@@ -17,7 +17,7 @@ class NodeTest {
 
     lateinit var pane: StackPane
 
-    @Before
+    @BeforeEach
     fun setup() {
         pane = StackPane()
     }

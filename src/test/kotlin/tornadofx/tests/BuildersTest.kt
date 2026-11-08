@@ -4,11 +4,11 @@ import javafx.scene.layout.StackPane
 import javafx.scene.text.Text
 import javafx.stage.Stage
 import org.hamcrest.Matchers
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.testfx.api.FxAssert.verifyThat
 import org.testfx.api.FxToolkit
-import org.testfx.matcher.base.NodeMatchers
+import org.testfx.matcher.control.TextMatchers
 import tornadofx.text
 
 class BuildersTest {
@@ -16,7 +16,7 @@ class BuildersTest {
 
     lateinit var pane: StackPane
 
-    @Before
+    @BeforeEach
     fun setup() {
         pane = StackPane()
     }
@@ -25,9 +25,9 @@ class BuildersTest {
     fun text_builder() {
         // expect:
         verifyThat(pane.text(), Matchers.instanceOf(Text::class.java))
-        verifyThat(pane.text(), NodeMatchers.hasText(""))
-        verifyThat(pane.text("foo"), NodeMatchers.hasText("foo"))
-        verifyThat(pane.text() { text = "bar" }, NodeMatchers.hasText("bar"))
+        verifyThat(pane.text(), TextMatchers.hasText(""))
+        verifyThat(pane.text("foo"), TextMatchers.hasText("foo"))
+        verifyThat(pane.text() { text = "bar" }, TextMatchers.hasText("bar"))
     }
 
 }

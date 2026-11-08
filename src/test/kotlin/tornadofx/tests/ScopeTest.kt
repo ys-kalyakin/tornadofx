@@ -1,9 +1,9 @@
 package tornadofx.tests
 
 import javafx.stage.Stage
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.Test
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 import org.testfx.api.FxToolkit
 import tornadofx.*
 import kotlin.test.assertEquals
@@ -17,13 +17,13 @@ class ScopeTest {
 
         lateinit var primaryStage: Stage
 
-        @BeforeClass
+        @BeforeAll
         @JvmStatic
         fun beforeClass() {
             primaryStage = FxToolkit.registerPrimaryStage()
         }
 
-        @AfterClass
+        @AfterAll
         @JvmStatic
         fun afterClass() {
             FxToolkit.cleanupStages()

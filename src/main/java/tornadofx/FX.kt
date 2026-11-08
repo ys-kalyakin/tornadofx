@@ -21,7 +21,6 @@ import javafx.stage.Window
 import tornadofx.FX.Companion.inheritParamHolder
 import tornadofx.FX.Companion.inheritScopeHolder
 import tornadofx.FX.Companion.stylesheets
-import tornadofx.osgi.impl.getBundleId
 import java.lang.ref.WeakReference
 import java.net.MalformedURLException
 import java.net.URL
@@ -151,16 +150,9 @@ class FX {
         var reloadViewsOnFocus = false
         var dumpStylesheets = false
         var layoutDebuggerShortcut: KeyCodeCombination? = KeyCodeCombination(KeyCode.J, KeyCodeCombination.META_DOWN, KeyCodeCombination.ALT_DOWN)
-        var osgiDebuggerShortcut: KeyCodeCombination? = KeyCodeCombination(KeyCode.O, KeyCodeCombination.META_DOWN, KeyCodeCombination.ALT_DOWN)
 
-        val osgiAvailable: Boolean by lazy {
-            try {
-                Class.forName("org.osgi.framework.FrameworkUtil")
-                true
-            } catch (ex: Throwable) {
-                false
-            }
-        }
+        @Deprecated("OSGi support was removed", ReplaceWith("false"))
+        val osgiAvailable: Boolean get() = false
 
         private val _locale: SimpleObjectProperty<Locale> = object : SimpleObjectProperty<Locale>() {
             override fun invalidated() = loadMessages()
@@ -388,23 +380,13 @@ fun importStylesheet(stylesheet: String) {
 
 inline fun <reified T : Stylesheet> importStylesheet() = importStylesheet(T::class)
 fun <T : Stylesheet> importStylesheet(stylesheetType: KClass<T>) {
-    val url = StringBuilder("css://${stylesheetType.java.name}")
-    if (FX.osgiAvailable) {
-        val bundleId = getBundleId(stylesheetType)
-        if (bundleId != null) url.append("?$bundleId")
-    }
-    val urlString = url.toString()
-    if (urlString !in FX.stylesheets) FX.stylesheets.add(url.toString())
+    val urlString = "css://${stylesheetType.java.name}"
+    if (urlString !in FX.stylesheets) FX.stylesheets.add(urlString)
 }
 
 inline fun <reified T : Stylesheet> removeStylesheet() = removeStylesheet(T::class)
 fun <T : Stylesheet> removeStylesheet(stylesheetType: KClass<T>) {
-    val url = StringBuilder("css://${stylesheetType.java.name}")
-    if (FX.osgiAvailable) {
-        val bundleId = getBundleId(stylesheetType)
-        if (bundleId != null) url.append("?$bundleId")
-    }
-    FX.stylesheets.remove(url.toString())
+    FX.stylesheets.remove("css://${stylesheetType.java.name}")
 }
 
 
@@ -501,8 +483,8 @@ fun EventTarget.addChildIfPossible(node: Node, index: Int? = null) {
         val target = builderTarget
         if (target != null) {
             // Trick to get around the disallowed use of invoke on out projected types
-            @Suppress("UNNECESSARY_NOT_NULL_ASSERTION")
-            target!!(this).value = node
+            @Suppress("UNCHECKED_CAST")
+            (target as Function1<Node, ObjectProperty<Node>>)(this).value = node
             return
         }
     }

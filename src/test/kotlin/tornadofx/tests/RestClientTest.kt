@@ -2,10 +2,10 @@ package tornadofx.tests
 
 import com.sun.net.httpserver.HttpServer
 import javafx.stage.Stage
-import org.junit.AfterClass
-import org.junit.Assert
-import org.junit.BeforeClass
-import org.junit.Test
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Assertions as Assert
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 import org.testfx.api.FxToolkit
 import tornadofx.*
 import java.net.InetSocketAddress
@@ -20,7 +20,7 @@ class RestClientTest {
         lateinit var api: Rest
         var itemPostPayload: JsonObject? = null
 
-        @BeforeClass
+        @BeforeAll
         @JvmStatic
         fun startWebserverAndDefineAPI() {
             api = Rest().apply {
@@ -52,11 +52,30 @@ class RestClientTest {
                         }
                     }
                 }
+
+                createContext("/secure") { exchange ->
+                    val auth = exchange.requestHeaders.getFirst("Authorization")
+                    val expected = "Basic " + java.util.Base64.getEncoder().encodeToString("user:pass".toByteArray())
+                    if (auth == expected) {
+                        exchange.responseHeaders.add("Content-Type", "application/json")
+                        exchange.sendResponseHeaders(200, 0)
+                        exchange.responseBody.use {
+                            Json.createWriter(it).writeObject(JsonBuilder().add("authenticated", true).build())
+                        }
+                    } else {
+                        exchange.sendResponseHeaders(401, -1)
+                    }
+                }
+
+                createContext("/slow") { exchange ->
+                    Thread.sleep(3000)
+                    exchange.sendResponseHeaders(200, -1)
+                }
                 start()
             }
         }
 
-        @AfterClass
+        @AfterAll
         @JvmStatic
         fun stopWebserver() {
             httpServer.stop(0)
@@ -94,5 +113,38 @@ class RestClientTest {
     fun encodeQueryString() {
         val params = mapOf("name" to "Edvin Syse", "street" to "Møllegaten 12")
         Assert.assertEquals("?name=Edvin+Syse&street=M%C3%B8llegaten+12", params.queryString)
+    }
+
+    @Test
+    fun testApacheEngineGet() {
+        val engine = Rest().apply {
+            baseURI = "http://localhost:8954"
+            engine = HttpClientEngine(this)
+        }
+        val categories = engine.get("category").list()
+        Assert.assertEquals(2, categories.size)
+    }
+
+    @Test
+    fun testBasicAuthWithApacheEngine() {
+        val secure = Rest().apply {
+            baseURI = "http://localhost:8954"
+            engine = HttpClientEngine(this)
+            setBasicAuth("user", "pass")
+        }
+        val result = secure.post("/secure", JsonBuilder().add("name", "test").build()).one()
+        Assert.assertEquals(true, result.boolean("authenticated"))
+    }
+
+    @Test
+    fun testRequestTimeout() {
+        val rest = Rest().apply {
+            baseURI = "http://localhost:8954"
+            engine = HttpClientEngine(this)
+        }
+        val exception = Assert.assertThrows(RestException::class.java) {
+            rest.get("/slow") { it.properties["tornadofx.requestTimeoutMs"] = 300L }
+        }
+        Assert.assertNotNull(exception.cause, "The timeout failure should carry the underlying cause")
     }
 }

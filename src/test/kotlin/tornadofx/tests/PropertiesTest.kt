@@ -6,9 +6,9 @@ import javafx.beans.binding.IntegerBinding
 import javafx.beans.binding.LongBinding
 import javafx.beans.property.*
 import javafx.collections.FXCollections
-import org.junit.Assert
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import org.junit.jupiter.api.Assertions as Assert
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import tornadofx.*
 import kotlin.test.assertEquals
 
@@ -2819,9 +2819,9 @@ class PropertiesTest {
     }
 
     @Test fun propertyFromMapKey() {
-        val map = mutableMapOf("hello" to "world", "number" to 42)
-        val helloProperty = map.toProperty("hello") { SimpleStringProperty(it as String?) }
-        val numberProperty = map.toProperty("number") { SimpleIntegerProperty(it as Int) }
+        val map = mutableMapOf<String, Any?>("hello" to "world", "number" to 42)
+        val helloProperty = map.toProperty<String, Any?, String>("hello") { SimpleStringProperty(it) }
+        val numberProperty = map.toProperty<String, Any?, Number>("number") { SimpleIntegerProperty(it as Int) }
         helloProperty.value = "there"
         numberProperty.value = 43
         Assert.assertEquals("there", map["hello"])

@@ -6,18 +6,21 @@ import javafx.collections.ListChangeListener
 import javafx.collections.ObservableList
 import javafx.scene.control.ProgressBar.INDETERMINATE_PROGRESS
 import javafx.scene.control.Tooltip
-import org.apache.http.HttpEntity
-import org.apache.http.HttpHost
-import org.apache.http.auth.AuthScope
-import org.apache.http.auth.UsernamePasswordCredentials
-import org.apache.http.client.config.RequestConfig
-import org.apache.http.client.methods.*
-import org.apache.http.client.protocol.HttpClientContext
-import org.apache.http.entity.InputStreamEntity
-import org.apache.http.entity.StringEntity
-import org.apache.http.impl.auth.BasicScheme
-import org.apache.http.impl.client.*
-import org.apache.http.util.EntityUtils
+import org.apache.hc.client5.http.classic.methods.*
+import org.apache.hc.client5.http.config.RequestConfig
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder
+import org.apache.hc.client5.http.impl.classic.HttpClients
+import org.apache.hc.client5.http.protocol.HttpClientContext
+import org.apache.hc.core5.http.ClassicHttpRequest
+import org.apache.hc.core5.http.ContentType
+import org.apache.hc.core5.http.HttpEntity
+import org.apache.hc.core5.http.HttpHost
+import org.apache.hc.core5.http.io.entity.EntityUtils
+import org.apache.hc.core5.http.io.entity.InputStreamEntity
+import org.apache.hc.core5.http.io.entity.StringEntity
+import org.apache.hc.core5.util.Timeout
 import tornadofx.Rest.Request.Method.*
 import java.io.Closeable
 import java.io.InputStream
@@ -383,20 +386,10 @@ open class HttpClientEngine(val rest: Rest) : Rest.Engine() {
     override fun setBasicAuth(username: String, password: String) {
         requireNotNull(rest.baseURI){"You must configure the baseURI first."}
 
-        val uri = URI.create(rest.baseURI)
-
-        val scheme = if (uri.scheme == null) "http" else uri.scheme
-        val port = if (uri.port > -1) uri.port else if (scheme == "http") 80 else 443
-        val host = HttpHost(uri.host, port, scheme)
-
-        val credsProvider = BasicCredentialsProvider().apply {
-            setCredentials(AuthScope(host), UsernamePasswordCredentials(username, password))
-        }
-
-        context.authCache = BasicAuthCache()
-        context.authCache.put(host, BasicScheme())
-
-        client = HttpClients.custom().setDefaultCredentialsProvider(credsProvider).build()
+        // HttpClient 5.6 no longer honors the authCache-based preemptive recipe,
+        // so the Authorization header is applied through an AuthContext instead,
+        // the same way HttpURLEngine does it
+        rest.authContext = HttpURLBasicAuthContext(username, password)
     }
 
     override fun setDigestAuth(username: String, password: String) {
@@ -410,19 +403,19 @@ open class HttpClientEngine(val rest: Rest) : Rest.Engine() {
 }
 
 class HttpClientRequest(val engine: HttpClientEngine, val client: CloseableHttpClient, override val seq: Long, override val method: Rest.Request.Method, override val uri: URI, override val entity: Any?) : Rest.Request {
-    lateinit var request: HttpRequestBase
+    lateinit var request: ClassicHttpRequest
 
     init {
         reset()
     }
 
     override fun reset() {
-        when (method) {
-            GET -> request = HttpGet(uri)
-            PUT -> request = HttpPut(uri)
-            POST -> request = HttpPost(uri)
-            DELETE -> request = HttpDelete(uri)
-            PATCH -> request = HttpPatch(uri)
+        request = when (method) {
+            GET -> HttpGet(uri)
+            PUT -> HttpPut(uri)
+            POST -> HttpPost(uri)
+            DELETE -> HttpDelete(uri)
+            PATCH -> HttpPatch(uri)
         }
         addHeader("Accept-Encoding", "gzip, deflate")
         addHeader("Content-Type", "application/json")
@@ -430,26 +423,29 @@ class HttpClientRequest(val engine: HttpClientEngine, val client: CloseableHttpC
     }
 
     override fun execute(): Rest.Response {
+        engine.rest.authContext?.interceptRequest(this)
+        engine.requestInterceptor?.invoke(this)
+
+        val configBuilder = RequestConfig.custom()
         if (engine.rest.proxy != null) {
             val hp = engine.rest.proxy as Proxy
             val sa = hp.address() as? InetSocketAddress
             if (sa != null) {
-                val scheme = if (engine.rest.baseURI?.startsWith("https") ?: false) "https" else "http"
-                val proxy = HttpHost(sa.address, sa.port, scheme)
-                request.config = RequestConfig.custom().setProxy(proxy).build()
+                val scheme = if (engine.rest.baseURI?.startsWith("https") == true) "https" else "http"
+                configBuilder.setProxy(HttpHost(sa.hostString, scheme, sa.port))
             }
         }
-        engine.requestInterceptor?.invoke(this)
+        (properties["tornadofx.requestTimeoutMs"] as? Long)?.let {
+            configBuilder.setResponseTimeout(Timeout.ofMilliseconds(it))
+        }
+        (request as HttpUriRequestBase).config = configBuilder.build()
 
-        if (entity != null && request is HttpEntityEnclosingRequestBase) {
-
-            val r = request as HttpEntityEnclosingRequestBase
-
+        if (entity != null) {
             when (entity) {
-                is JsonModel -> r.entity = StringEntity(entity.toJSON().toString(), UTF_8)
-                is JsonValue -> r.entity = StringEntity(entity.toString(), UTF_8)
-                is InputStream -> r.entity = InputStreamEntity(entity)
-                is HttpEntity -> r.entity = entity
+                is JsonModel -> request.entity = StringEntity(entity.toJSON().toString(), ContentType.APPLICATION_JSON)
+                is JsonValue -> request.entity = StringEntity(entity.toString(), ContentType.APPLICATION_JSON)
+                is InputStream -> request.entity = InputStreamEntity(entity, -1, null)
+                is HttpEntity -> request.entity = entity
                 else -> throw IllegalArgumentException("Don't know how to handle entity of type ${entity.javaClass}")
             }
         }
@@ -457,18 +453,19 @@ class HttpClientRequest(val engine: HttpClientEngine, val client: CloseableHttpC
         val httpResponse = client.execute(request, engine.context)
 
         val response = HttpClientResponse(this, httpResponse)
-        engine.responseInterceptor?.invoke(response)
-        return response
+        val modifiedResponse = engine.rest.authContext?.interceptResponse(response) ?: response
+        engine.responseInterceptor?.invoke(modifiedResponse)
+        return modifiedResponse
     }
 
     override fun addHeader(name: String, value: String) = request.addHeader(name, value)
-    override fun getHeader(name: String) = request.getFirstHeader("name")?.value
+    override fun getHeader(name: String) = request.getFirstHeader(name)?.value
     override var properties: MutableMap<Any, Any> = HashMap()
 }
 
 class HttpClientResponse(override val request: HttpClientRequest, val response: CloseableHttpResponse) : Rest.Response {
-    override val statusCode: Int get() = response.statusLine.statusCode
-    override val reason: String get() = response.statusLine.reasonPhrase
+    override val statusCode: Int get() = response.code
+    override val reason: String get() = response.reasonPhrase
 
     override fun close() {
         consume()
@@ -476,7 +473,7 @@ class HttpClientResponse(override val request: HttpClientRequest, val response: 
 
     override fun text(): String {
         try {
-            return EntityUtils.toString(response.entity, UTF_8)
+            return response.entity?.let { EntityUtils.toString(it, UTF_8) } ?: ""
         } finally {
             consume()
         }
@@ -484,9 +481,9 @@ class HttpClientResponse(override val request: HttpClientRequest, val response: 
 
 
     override fun consume() = apply {
-        EntityUtils.consumeQuietly(response.entity)
+        response.entity?.let { runCatching { EntityUtils.consume(it) } }
         try {
-            (response as? CloseableHttpResponse)?.close()
+            response.close()
         } finally {
             Platform.runLater { Rest.ongoingRequests.remove(request) }
         }
@@ -496,13 +493,13 @@ class HttpClientResponse(override val request: HttpClientRequest, val response: 
 
     override fun bytes(): ByteArray {
         try {
-            return EntityUtils.toByteArray(response.entity)
+            return response.entity?.let { EntityUtils.toByteArray(it) } ?: ByteArray(0)
         } finally {
             consume()
         }
     }
 
-    override val headers get() = response.allHeaders.associate { it.name to listOf(it.value) }
+    override val headers get() = response.headers.associate { it.name to listOf(it.value) }
 }
 
 inline fun <reified T : JsonModel> JsonObject.toModel(): T {

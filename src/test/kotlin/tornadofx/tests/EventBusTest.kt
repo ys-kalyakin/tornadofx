@@ -2,7 +2,7 @@ package tornadofx.tests
 
 import javafx.application.Platform
 import javafx.stage.Stage
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import org.testfx.api.FxToolkit
 import tornadofx.*
 import java.util.concurrent.atomic.AtomicBoolean

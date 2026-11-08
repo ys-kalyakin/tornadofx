@@ -4,8 +4,8 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
-import org.junit.Assert
-import org.junit.Test
+import org.junit.jupiter.api.Assertions as Assert
+import org.junit.jupiter.api.Test
 import tornadofx.*
 
 class ListTest {

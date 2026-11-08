@@ -1,4 +1,4 @@
-package sun.net.www.protocol.css
+package tornadofx.css
 
 import tornadofx.FX
 import tornadofx.Stylesheet

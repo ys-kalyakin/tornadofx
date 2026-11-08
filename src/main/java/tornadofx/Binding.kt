@@ -219,8 +219,9 @@ fun <T> ObservableValue<T>.selectBoolean(nested: (T) -> BooleanExpression): Bool
 
         override fun getValue() = currentNested.value
 
+        @Suppress("UNCHECKED_CAST")
         override fun setValue(v: Boolean?) {
-            (currentNested as? WritableValue<*>)?.value = v
+            (currentNested as? WritableValue<Boolean>)?.value = v
             super.setValue(v)
         }
 

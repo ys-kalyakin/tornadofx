@@ -1,9 +1,9 @@
 package tornadofx.tests
 
 import javafx.stage.Stage
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.Test
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 import org.testfx.api.FxAssert.verifyThat
 import org.testfx.api.FxToolkit
 import org.testfx.matcher.control.LabeledMatchers.hasText
@@ -18,7 +18,7 @@ class StylesheetErrorTest {
 
 		val app = App(StylesheetErrorView::class, Styles::class)
 		@JvmStatic
-		@BeforeClass
+		@BeforeAll
 		fun before() {
 			val primaryStage: Stage = FxToolkit.registerPrimaryStage()
 			/**
@@ -30,7 +30,7 @@ class StylesheetErrorTest {
 		}
 
 		@JvmStatic
-		@AfterClass
+		@AfterAll
 		fun after() {
 			FxToolkit.cleanupApplication(app)
 			FX.stylesheets.clear()

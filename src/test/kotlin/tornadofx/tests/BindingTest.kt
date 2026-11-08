@@ -6,8 +6,8 @@ import javafx.beans.property.SimpleDoubleProperty
 import javafx.collections.FXCollections
 import javafx.scene.control.Label
 import javafx.stage.Stage
-import org.junit.Assert
-import org.junit.Test
+import org.junit.jupiter.api.Assertions as Assert
+import org.junit.jupiter.api.Test
 import org.testfx.api.FxToolkit
 import tornadofx.*
 import java.text.DecimalFormat
@@ -47,10 +47,7 @@ class BindingTest {
         map["0123456"] = 4
         Assert.assertEquals(list, listOf('4'))
         map["abcdefg"] = 3
-        Assert.assertTrue(
-                "expected ['d', '4'] got ${list.joinToString() }}",
-                list.containsAll(listOf('d', '4')) && list.size == 2
-        )
+        Assert.assertTrue(list.containsAll(listOf('d', '4')) && list.size == 2, "expected ['d', '4'] got ${list.joinToString() }}")
     }
 
     @Test

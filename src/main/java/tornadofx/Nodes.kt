@@ -2,7 +2,7 @@
 
 package tornadofx
 
-import com.sun.javafx.scene.control.skin.TableColumnHeader
+import javafx.scene.control.skin.TableColumnHeader
 import javafx.animation.Animation
 import javafx.animation.PauseTransition
 import javafx.application.Platform
@@ -34,7 +34,6 @@ import javafx.util.Callback
 import javafx.util.Duration
 import javafx.util.StringConverter
 import javafx.util.converter.*
-import tornadofx.osgi.OSGIConsole
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.LocalDate
@@ -148,8 +147,6 @@ val Stage.stageGlobalShortcuts: EventHandler<KeyEvent>
                 properties[key] = EventHandler<KeyEvent> {
                     if (FX.layoutDebuggerShortcut?.match(it) ?: false)
                         LayoutDebugger.debug(scene)
-                    else if (FX.osgiDebuggerShortcut?.match(it) ?: false && FX.osgiAvailable)
-                        find<OSGIConsole>().openModal(modality = Modality.NONE)
                 }
             }
             return properties[key] as EventHandler<KeyEvent>

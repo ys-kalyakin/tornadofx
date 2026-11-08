@@ -9,7 +9,7 @@ import javafx.scene.layout.Pane
 import javafx.scene.layout.VBox
 import javafx.scene.text.Text
 import javafx.stage.Stage
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import org.testfx.api.FxToolkit
 import tornadofx.*
 import kotlin.test.assertEquals

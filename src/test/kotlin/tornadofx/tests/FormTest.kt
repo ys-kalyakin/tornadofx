@@ -1,7 +1,7 @@
 package tornadofx.tests
 
 import javafx.stage.Stage
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import org.testfx.api.FxToolkit
 import tornadofx.*
 import kotlin.test.assertEquals

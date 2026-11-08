@@ -2,7 +2,7 @@ package tornadofx.tests
 
 import javafx.geometry.Point2D
 import javafx.geometry.Point3D
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import tornadofx.*
 import kotlin.math.sqrt
 import kotlin.test.assertEquals

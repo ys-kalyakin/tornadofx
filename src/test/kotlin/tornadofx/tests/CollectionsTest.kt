@@ -1,6 +1,6 @@
 package tornadofx.tests
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import tornadofx.*
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

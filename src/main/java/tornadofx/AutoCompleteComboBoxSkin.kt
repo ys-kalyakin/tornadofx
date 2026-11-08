@@ -1,15 +1,12 @@
 package tornadofx
 
-import com.sun.javafx.scene.control.behavior.ComboBoxListViewBehavior
-import com.sun.javafx.scene.control.skin.ComboBoxPopupControl
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
-import javafx.css.PseudoClass
 import javafx.event.EventHandler
-import javafx.scene.AccessibleRole
 import javafx.scene.Node
 import javafx.scene.control.*
+import javafx.scene.control.skin.ComboBoxListViewSkin
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.util.Callback
@@ -179,60 +176,60 @@ class FilterInputTextHandler(val editor : TextField, val filterHandler : FilterH
  * Default filter use the string produced by the converter of combobox and search with contains ignore case the occurrence of typed text
  * Created by anouira on 15/02/2017.
  */
-open class AutoCompleteComboBoxSkin<T>(val comboBox: ComboBox<T>, autoCompleteFilter: ((String) -> List<T>)?, automaticPopupWidth: Boolean) : ComboBoxPopupControl<T>(comboBox, ComboBoxListViewBehavior(comboBox)), FilterHandler {
+open class AutoCompleteComboBoxSkin<T>(val comboBox: ComboBox<T>, autoCompleteFilter: ((String) -> List<T>)?, automaticPopupWidth: Boolean) : ComboBoxListViewSkin<T>(comboBox), FilterHandler {
+    // The base class constructor may call back into this skin before subclass
+    // state is initialized, so all access to the combo box goes through the
+    // skinnable instead of the constructor parameter
+    private val cb: ComboBox<T> get() = skinnable as ComboBox<T>
+
     var autoCompleteFilter_: (String) -> List<T> = autoCompleteFilter ?: {
-        comboBox.items.filter { current -> comboBox.converter.toString(current).contains(it, true) }
+        cb.items.filter { current -> cb.converter.toString(current).contains(it, true) }
     }
 
-    protected val listView = ListView<T>(comboBox.items)
+    internal val listView = ListView<T>(cb.items)
     private var skipValueUpdate = false
-    private var comboBoxItems: ObservableList<T> = if (comboBox.items == null) FXCollections.emptyObservableList<T>() else comboBox.items
 
     private val filterHandler by lazy<EventHandler<KeyEvent>> {
-        if(comboBox.isEditable) {
-            FilterInputTextHandler(comboBox.editor, this)
+        if(cb.isEditable) {
+            FilterInputTextHandler(cb.editor, this)
 
         } else {
-            FilterTooltipHandler(comboBox, this)
+            FilterTooltipHandler(cb, this)
         }
 
     }
 
     init {
-        with(comboBox) {
+        with(cb) {
             onKeyReleased = filterHandler
             focusedProperty().onChange { focus -> if(!focus) {
                 resetFilter()
-                comboBox.hide()
+                cb.hide()
             }}
-            arrowButton.setOnMouseClicked {
-                if (isShowing) {
-                    resetFilter()
-                }
-            }
+            // Reset the filter whenever the popup opens (replaces the old
+            // package-private arrowButton click hook)
+            showingProperty().onChange { showing -> if (showing) resetFilter() }
         }
         listView.selectionModel.selectedItemProperty().onChange {
-            if (!skipValueUpdate) comboBox.value = it
+            if (!skipValueUpdate) cb.value = it
         }
         listView.onUserSelect(clickCount = 1) {
-            comboBox.value = it
+            cb.value = it
             if(filterHandler is FilterTooltipHandler) {
                 resetFilter()
             }
-            comboBox.hide()
-            updateDisplayArea()
+            cb.hide()
         }
         if (!automaticPopupWidth) {
             // Note that we cannot bind prefWidthProperty because JavaFX sets
             // the preferred width upon reconfiguration. (ComboBoxPopupControl.java:322)
-            comboBox.widthProperty().onChange {
+            cb.widthProperty().onChange {
                 if (!listView.prefWidthProperty().isBound) listView.prefWidth = it
             }
         }
         updateCellFactory()
-        updateButtonCell()
         updateValue()
-        comboBox.cellFactoryProperty().onChange { updateCellFactory() }
+        cb.cellFactoryProperty().onChange { updateCellFactory() }
     }
 
     override fun handleFilterChange(text : String) {
@@ -241,9 +238,9 @@ open class AutoCompleteComboBoxSkin<T>(val comboBox: ComboBox<T>, autoCompleteFi
         listView.requestLayout()
 
         if (list.isEmpty()) {
-            comboBox.hide()
+            cb.hide()
         } else {
-            comboBox.show()
+            cb.show()
             if (listView.selectedItem == null) {
                 skipValueUpdate = true
                 listView.selectionModel.selectFirst()
@@ -256,32 +253,32 @@ open class AutoCompleteComboBoxSkin<T>(val comboBox: ComboBox<T>, autoCompleteFi
     /** Specific auto complete implementation */
     override fun validateSelection() {
         if (!listView.selectionModel.isEmpty) {
-            comboBox.value = listView.selectedItem
+            cb.value = listView.selectedItem
         }
-        if (comboBox.isShowing) {
-            comboBox.hide()
+        if (cb.isShowing) {
+            cb.hide()
         }
     }
 
     override fun showSuggestion() : Boolean {
-        if(!comboBox.isShowing) {
-            comboBox.show()
+        if(!cb.isShowing) {
+            cb.show()
             return true
         }
         return false
     }
 
     override fun hideSuggestion() : Boolean {
-        if(comboBox.isShowing) {
-            comboBox.hide()
+        if(cb.isShowing) {
+            cb.hide()
             return true
         }
         return false
     }
 
     private fun updateCellFactory() {
-        if (comboBox.cellFactory != null) {
-            listView.cellFactory = comboBox.cellFactory
+        if (cb.cellFactory != null) {
+            listView.cellFactory = cb.cellFactory
         } else {
             createDefaultCellFactory()
         }
@@ -305,84 +302,15 @@ open class AutoCompleteComboBoxSkin<T>(val comboBox: ComboBox<T>, autoCompleteFi
     }
 
     private fun resetFilter() {
-        listView.items = comboBox.items
+        listView.items = cb.items
         (filterHandler as? Resettable)?.reset()
     }
 
     /** End of Specific auto complete implementation */
 
-    /** Implementation copied from ComboBoxListViewSkin */
-    private var buttonCell: ListCell<T>? = null
-
-    // These three pseudo class states are duplicated from Cell
-    private val PSEUDO_CLASS_SELECTED = PseudoClass.getPseudoClass("selected")
-    private val PSEUDO_CLASS_EMPTY = PseudoClass.getPseudoClass("empty")
-    private val PSEUDO_CLASS_FILLED = PseudoClass.getPseudoClass("filled")
-
-    override fun getDisplayNode(): Node? {
-        val displayNode: Node
-        if (comboBox.isEditable) {
-            displayNode = editableInputNode
-        } else {
-            displayNode = buttonCell as Node
-        }
-
-        updateDisplayNode()
-
-        return displayNode
-    }
-
-    private fun updateButtonCell() {
-        buttonCell = if (comboBox.buttonCell != null)
-            comboBox.buttonCell
-        else
-            getDefaultCellFactory().call(listView)
-        buttonCell?.setMouseTransparent(true)
-        buttonCell?.updateListView(listView)
-        updateDisplayArea()
-        // As long as the screen-reader is concerned this node is not a list item.
-        // This matters because the screen-reader counts the number of list item
-        // within combo and speaks it to the user.
-        buttonCell?.setAccessibleRole(AccessibleRole.NODE)
-    }
-
-    private fun getDefaultCellFactory(): Callback<ListView<T>, ListCell<T>> {
-        return Callback {
-            object : ListCell<T>() {
-                public override fun updateItem(item: T, empty: Boolean) {
-                    super.updateItem(item, empty)
-                    updateDisplayText(this, item, empty)
-                }
-            }
-        }
-    }
-
-    private fun updateDisplayText(cell: ListCell<T>?, item: T?, empty: Boolean): Boolean {
-        if (empty) {
-            if (cell == null) return true
-            cell.graphic = null
-            cell.text = null
-            return true
-        } else if (item is Node) {
-            val currentNode = cell!!.graphic
-            val newNode = item
-            if (currentNode == null || currentNode != newNode) {
-                cell.text = null
-                cell.graphic = newNode
-            }
-            return false
-        } else {
-            // run item through StringConverter if it isn't null
-            val c = comboBox.converter
-            val s = if (item == null) comboBox.promptText else if (c == null) item.toString() else c.toString(item)
-            cell!!.text = s
-            cell.graphic = null
-            return s.isNullOrEmpty()
-        }
-    }
-
+    /** Syncs the auto complete list view selection with the combo box value */
     private fun updateValue() {
-        val newValue = comboBox.value
+        val newValue = cb.value
 
         val listViewSM = listView.selectionModel
 
@@ -394,13 +322,11 @@ open class AutoCompleteComboBoxSkin<T>(val comboBox: ComboBox<T>, autoCompleteFi
             // selection
             val indexOfNewValue = getIndexOfComboBoxValueInItemsList()
             if (indexOfNewValue == -1) {
-                //listSelectionLock = true
                 listViewSM.clearSelection()
-                //listSelectionLock = false
             } else {
-                val index = comboBox.selectionModel.selectedIndex
-                if (index in comboBoxItems.indices) {
-                    val itemsObj = comboBoxItems.get(index)
+                val index = cb.selectionModel.selectedIndex
+                if (index in cb.items.indices) {
+                    val itemsObj = cb.items.get(index)
                     if (itemsObj != null && itemsObj == newValue) {
                         listViewSM.select(index)
                     } else {
@@ -408,12 +334,8 @@ open class AutoCompleteComboBoxSkin<T>(val comboBox: ComboBox<T>, autoCompleteFi
                     }
                 } else {
                     // just select the first instance of newValue in the list
-                    val listViewIndex = comboBoxItems.indexOf(newValue)
-                    if (listViewIndex == -1) {
-                        // RT-21336 Show the ComboBox value even though it doesn't
-                        // exist in the ComboBox items list (part one of fix)
-                        updateDisplayNode()
-                    } else {
+                    val listViewIndex = cb.items.indexOf(newValue)
+                    if (listViewIndex > -1) {
                         listViewSM.select(listViewIndex)
                     }
                 }
@@ -422,45 +344,10 @@ open class AutoCompleteComboBoxSkin<T>(val comboBox: ComboBox<T>, autoCompleteFi
     }
 
     private fun getIndexOfComboBoxValueInItemsList(): Int {
-        val value = comboBox.value
-        val index = comboBoxItems.indexOf(value)
-        return index
-    }
-
-    override fun updateDisplayNode() {
-        if (editor != null) {
-            super.updateDisplayNode()
-        } else {
-            val value = comboBox.value
-            val index = getIndexOfComboBoxValueInItemsList()
-            if (index > -1) {
-                buttonCell?.setItem(null)
-                buttonCell?.updateIndex(index)
-            } else {
-                // RT-21336 Show the ComboBox value even though it doesn't
-                // exist in the ComboBox items list (part two of fix)
-                buttonCell?.updateIndex(-1)
-                val empty = updateDisplayText(buttonCell, value, false)
-
-                // Note that empty boolean collected above. This is used to resolve
-                // RT-27834, where we were getting different styling based on whether
-                // the cell was updated via the updateIndex method above, or just
-                // by directly updating the text. We fake the pseudoclass state
-                // for empty, filled, and selected here.
-                buttonCell?.pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, empty)
-                buttonCell?.pseudoClassStateChanged(PSEUDO_CLASS_FILLED, !empty)
-                buttonCell?.pseudoClassStateChanged(PSEUDO_CLASS_SELECTED, true)
-            }
-        }
+        val value = cb.value
+        return cb.items.indexOf(value)
     }
 
     override fun getPopupContent() = listView
-
-    override fun getEditor() = if (skinnable.isEditable) (skinnable as ComboBox<T>).editor else null
-
-    override fun getConverter() = (skinnable as ComboBox<T>).converter
-
-    /* End of Implementation copied from ComboBoxListViewSkin */
-
 
 }

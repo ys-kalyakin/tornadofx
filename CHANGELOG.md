@@ -1,16 +1,63 @@
 # Change Log
 
-## [1.7.21-SNAPSHOT]
+## [1.7.21-SNAPSHOT] — modern stack
+
+This release modernizes the framework onto the current Java stack. It is a
+deliberate compatibility break; consumers who cannot migrate should stay on
+the 1.7.20 release.
+
+### Breaking changes
+
+- **Platform baseline**: the framework is built with a JDK 21 toolchain, compiled
+  against **OpenJFX 21** (now declared as Maven dependencies with platform
+  classifiers) and published as Java 17 bytecode. JavaFX 8 / JDK 8 support is
+  dropped; consumers need a JDK 17+ runtime with JavaFX 21.
+- **Kotlin 2.x (K2)**: built with Kotlin 2 and `jvmTarget` 17. Consumers must
+  build with Kotlin 2.x and `jvmTarget` 17.
+- **REST client**: `Rest` is ported from Apache HttpClient 4 to **HttpClient 5**
+  (`org.apache.httpcomponents.client5:httpclient5`, `provided` scope). The public
+  `HttpClientEngine`, `HttpClientRequest` and `HttpClientResponse` classes now
+  expose client5 types. Basic auth is applied pre-emptively through an
+  `AuthContext` (HttpClient 5.6 no longer honors the authCache preemptive
+  recipe), and the digest `AuthContext` now runs for the Apache engine as well.
+  Request timeouts can be configured per request via
+  `request.properties["tornadofx.requestTimeoutMs"]`.
+- **OSGi support removed**: the `tornadofx.osgi` package, the Felix dependency,
+  the bundle manifest configuration and `FX.osgiDebuggerShortcut` are gone.
+  `FX.osgiAvailable` is deprecated and always returns `false`. OSGi consumers
+  should stay on 1.7.x.
+- **CSS URL handler relocated**: the type-safe stylesheet URL handler moved from
+  the `sun.net.www.protocol.css` package to `tornadofx.css`. The framework
+  registers it automatically; applications that referenced the old package must
+  update.
+- **`ViewModel.bind` facade types under Kotlin 2**: with K2's more precise type
+  inference, binding a producer that returns an `ObjectProperty` now yields an
+  object facade (matching the inferred result type) instead of a type-specific
+  facade.
+
+### Changes
+
+- Custom controls (DataGrid, SqueezeBox, AutoCompleteComboBox) are rebuilt on
+  the public JavaFX skin APIs (`javafx.scene.control.skin`); the internal
+  behavior classes from `com.sun.javafx.scene.control.behavior` are no longer
+  used.
+- JDK-internal API usage removed from main sources: `com.sun.glass`,
+  `com.sun.javafx.tk.Toolkit` (replaced by public `Platform` API) and the
+  unused `com.sun.xml.internal.bind` import in `ListMenu`.
+- Test stack: JUnit 4 → JUnit 5 (`junit-jupiter` 5.14), TestFX 4.0.18, surefire
+  3.6.
+- Build infrastructure: jcenter repository replaced by Maven Central, Dokka 2.x,
+  Maven plugin upgrades, Maven Wrapper (`mvnw`) added.
 
 ### Fixed
 
 - [#1157](https://github.com/edvin/tornadofx/issues/1157): cellFormat removes default style classes on cleanUp
+- `HttpClientRequest.getHeader` read the literal header name `"name"` instead of
+  the requested name, breaking `AuthContext` digest retry detection.
+- `App.determinePrimaryView` no longer fails when an `App` instance is created
+  without `Application.launch` (`getParameters()` is null on JavaFX 21).
 
-### Changes
-
-### Additions
-
-## [1.7.21-SNAPSHOT]
+## [1.7.21-SNAPSHOT] (pre-existing duplicate entry)
 
 ### Fixed
 
