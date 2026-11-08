@@ -118,6 +118,10 @@ open class Rest : Controller() {
             Platform.runLater { ongoingRequests.add(request) }
             return request.execute()
         } catch (t: Throwable) {
+            // Balance the ongoingRequests add above: a failed execute never
+            // produces a Response, so nothing would ever consume it. FIFO
+            // runLater ordering makes this a no-op if the add has not run yet.
+            Platform.runLater { ongoingRequests.remove(request) }
             throw RestException("Failed to execute request", request, null, t)
         }
     }

@@ -131,3 +131,64 @@ runAsync {
     customerTable.items = it
 }
 ```
+
+## Typed JSON with kotlinx.serialization
+
+Beyond the `JsonModel`/`JsonValue` layer above, the `Rest` client integrates
+with [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization):
+responses decode into `@Serializable` values and request bodies encode from
+them:
+
+```kotlin
+@Serializable
+data class PersonDto(val name: String, val age: Int = 0)
+
+val person = api.get("people/1").value<PersonDto>()       // object body
+val people = api.get("people").value<List<PersonDto>>()   // array body
+
+api.post("people", PersonDto("Edvin", 30))                // JSON-encoded body
+api.put("people/1", PersonDto("Edvin", 31))
+```
+
+Every bridge function also comes in an explicit-serializer style, which works
+for types the reified shortcut cannot express:
+
+```kotlin
+val person = api.get("people/1").value(PersonDto.serializer())
+api.post("people", PersonDto.serializer(), PersonDto("Edvin", 30))
+```
+
+Decode failures — malformed JSON or a body that does not match the target
+type — throw `RestException` carrying the request and response, consistent
+with `one()`/`list()`. An **empty body fails to decode**: unlike
+`one()`/`list()`, which return empty containers, typed decoding has no zero
+value to invent.
+
+The `Json` instance ignores unknown keys by default and is configurable
+globally and per call:
+
+```kotlin
+restJson = Json { ignoreUnknownKeys = false }              // global default
+
+api.get("people/1").value<PersonDto>(
+    Json { ignoreUnknownKeys = false })                    // per call
+```
+
+### Opt-in dependency
+
+kotlinx-serialization ships as a **provided** dependency, like HttpClient 5 and
+kotlinx-coroutines: declare it in your own build to use the bridge, while
+consumers who do not are unaffected:
+
+```xml
+<dependency>
+    <groupId>org.jetbrains.kotlinx</groupId>
+    <artifactId>kotlinx-serialization-json</artifactId>
+    <version>1.11.0</version>
+</dependency>
+```
+
+Your `@Serializable` classes are compiled by the kotlinx.serialization compiler
+plugin — apply it in your own build: `org.jetbrains.kotlin.plugin.serialization`
+with Gradle or `kotlin-maven-serialization` with Maven, version aligned with
+your Kotlin version.
