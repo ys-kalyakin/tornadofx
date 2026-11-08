@@ -50,6 +50,8 @@ nav:
   - Getting started: getting-started.md
   - Views & DI: views.md
   - Type-safe builders: builders.md
+  - Items & controls: items-controls.md
+  - Charts: charts.md
   - FXML: fxml.md
   - Type-safe stylesheets: stylesheets.md
   - Properties & binding: properties.md
@@ -57,7 +59,12 @@ nav:
   - EventBus: events.md
   - REST client: rest.md
   - Workspace & Wizard: workspace.md
+  - Dialogs & windows: dialogs-windows.md
+  - Config & preferences: config-preferences.md
+  - i18n & messages: i18n-messages.md
+  - Diagnostics: diagnostics.md
   - Validation: validation.md
+  - Testing: testing.md
   - Migration from 1.7.20: migration.md
 
 markdown_extensions:
