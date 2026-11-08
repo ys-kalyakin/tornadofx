@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Lets the JavaFX UI test suite run on machines without a display (local container or CI runner) by using the headless glass platform bundled with JavaFX, keeps flaky and environment-dependent tests out of the default run through a quarantine tag, and makes CI enforce the headless suite on every change.
+Lets the JavaFX UI test suite run on machines without a display (local container or CI runner) by using a headless glass platform provided on the test classpath, keeps flaky and environment-dependent tests out of the default run through a quarantine tag, and makes CI enforce the headless suite on every change.
 
 ## ADDED Requirements
 
