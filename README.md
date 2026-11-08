@@ -49,7 +49,7 @@ For Gradle, it means configuring the `kotlinOptions` of the Kotlin compilation t
 
 ```gradle
 compileKotlin {
-    kotlinOptions.jvmTarget= "1.8"
+    kotlinOptions.jvmTarget = "17"
 }
 ```
 
@@ -59,17 +59,15 @@ You also need a full rebuild of your code after a version upgrade. If you run in
  
 ## Getting started
 
+- [Guide](https://ys-kalyakin.github.io/tornadofx/) — documentation for this fork (English/Russian, switchable)
+- [Changelog](CHANGELOG.md)
 - [Screencasts](https://www.youtube.com/user/MrEdvinsyse)
-- [Guide](https://docs.tornadofx.io/) We are gradually migrating all information from the Wiki into the Guide
-- [KDocs](https://tornadofx.io/dokka/tornadofx/tornadofx/index.html)
-- [Wiki](https://github.com/edvin/tornadofx/wiki)
 - [Slack](https://kotlinlang.slack.com/messages/tornadofx/details/)
 - [Stack Overflow](http://stackoverflow.com/questions/ask?tags=tornadofx)
-- [Documentation](https://github.com/edvin/tornadofx/wiki/Documentation) 
 - [IntelliJ IDEA Plugin](https://github.com/edvin/tornadofx-idea-plugin) 
 - [Example Application](https://github.com/edvin/tornadofx-samples) 
 - [Maven QuickStart Archetype](https://github.com/edvin/tornadofx-quickstart-archetype) 
-- [Changelog](CHANGELOG.md)
+- [Legacy 1.7.x wiki](https://github.com/edvin/tornadofx/wiki) — documentation for the upstream 1.7.x line
 
 ### Generate a quickstart application with Maven
 
@@ -113,33 +111,6 @@ Configure your build environment to use snapshots if you want to try out the lat
 ```
 
 Snapshots are published every day at GMT 16:00 if there has been any changes.
-
-### Running the test suite
-
-The default invocation runs the whole suite on your workstation:
-
-```bash
-./mvnw test
-```
-
-The same suite also runs on machines with no display server (containers, CI runners)
-using the headless Monocle glass platform, which comes from the test-scoped
-`org.testfx:openjfx-monocle` dependency and is activated by a Maven profile:
-
-```bash
-./mvnw test -Pheadless
-```
-
-CI (`.github/workflows/ci.yml`) runs the default suite with `-Pheadless` as a
-blocking check on every push and pull request.
-
-Flaky or environment-dependent tests are quarantined: tagged `@Tag("quarantine")`
-they are excluded from every default run and run only on demand:
-
-```bash
-./mvnw test -Pquarantine                 # only quarantined tests
-./mvnw test -Pquarantine -Pheadless      # ... headless
-```
 
 ### What does it look like? (Code snippets)
 

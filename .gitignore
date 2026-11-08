@@ -17,3 +17,7 @@ example-table.png
 
 # ZCode
 .zcode/
+
+# Documentation site build output and local Python environment
+site/
+.venv/

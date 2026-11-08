@@ -1,0 +1,81 @@
+name: Docs
+
+# Builds the documentation site on pull requests (validation only) and
+# deploys it to GitHub Pages when documentation changes land on master.
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build docs site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+
+      - name: Install pinned docs toolchain
+        run: pip install -r docs/requirements.txt
+
+      - name: Check EN/RU page parity
+        run: python docs/check-parity.py
+
+      - name: Build site (strict)
+        env:
+          NO_MKDOCS_2_WARNING: '1'
+        run: mkdocs build --strict
+
+      - name: Upload Pages artifact
+        if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # enablement: true turns on GitHub Pages for the repository on the
+      # first run, so no manual repo settings are needed; if org policy
+      # blocks it, this step fails visibly and Pages must be enabled once
+      # in the repository settings.
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Deploy site
+        id: deployment
+        uses: actions/deploy-pages@v4
