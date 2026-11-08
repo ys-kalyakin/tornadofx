@@ -30,6 +30,11 @@ class CustomControlsTest {
 
         FxToolkit.setupFixture {
             primaryStage.scene = Scene(VBox().apply { setPrefSize(500.0, 300.0); add(grid) })
+            // Headless (Monocle): when the shared primary stage was already shown
+            // by a previously run test class, its position is undefined (NaN) and
+            // robot clicks cannot be mapped to screen coordinates. Pin it.
+            primaryStage.x = 100.0
+            primaryStage.y = 100.0
             primaryStage.show()
         }
 

@@ -114,6 +114,33 @@ Configure your build environment to use snapshots if you want to try out the lat
 
 Snapshots are published every day at GMT 16:00 if there has been any changes.
 
+### Running the test suite
+
+The default invocation runs the whole suite on your workstation:
+
+```bash
+./mvnw test
+```
+
+The same suite also runs on machines with no display server (containers, CI runners)
+using the headless Monocle glass platform, which comes from the test-scoped
+`org.testfx:openjfx-monocle` dependency and is activated by a Maven profile:
+
+```bash
+./mvnw test -Pheadless
+```
+
+CI (`.github/workflows/ci.yml`) runs the default suite with `-Pheadless` as a
+blocking check on every push and pull request.
+
+Flaky or environment-dependent tests are quarantined: tagged `@Tag("quarantine")`
+they are excluded from every default run and run only on demand:
+
+```bash
+./mvnw test -Pquarantine                 # only quarantined tests
+./mvnw test -Pquarantine -Pheadless      # ... headless
+```
+
 ### What does it look like? (Code snippets)
 
 Create a View

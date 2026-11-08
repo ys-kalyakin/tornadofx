@@ -101,6 +101,14 @@
             <version>${org.testfx.testfx-core.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- Monocle glass platform (headless toolkit) for the `headless` profile;
+             not bundled in the OpenJFX Maven artifacts, so pulled in test-scoped. -->
+        <dependency>
+            <groupId>org.testfx</groupId>
+            <artifactId>openjfx-monocle</artifactId>
+            <version>${org.testfx.openjfx-monocle.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>de.jensd</groupId>
             <artifactId>fontawesomefx</artifactId>
@@ -273,6 +281,11 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.surefire.version}</version>
+                <configuration>
+                    <!-- Quarantined (flaky / environment-dependent) tests never run
+                         in the default invocation; use -Pquarantine to run them. -->
+                    <excludedGroups>quarantine</excludedGroups>
+                </configuration>
             </plugin>
 
         </plugins>
@@ -307,6 +320,45 @@
             </activation>
             <properties><javafx.platform>linux</javafx.platform></properties>
         </profile>
+        <!-- Run the JavaFX toolkit headless on the Monocle glass platform bundled
+             with JavaFX 12+ (no extra dependency). Used on monitorless CI machines. -->
+        <profile>
+            <id>headless</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven.surefire.version}</version>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <glass.platform>Monocle</glass.platform>
+                                <monocle.platform>Headless</monocle.platform>
+                                <prism.order>sw</prism.order>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <!-- Run only the quarantined (flaky / environment-dependent) tests, e.g.
+             mvn test -Pquarantine; combine with -Pheadless on monitorless machines. -->
+        <profile>
+            <id>quarantine</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven.surefire.version}</version>
+                        <configuration>
+                            <groups>quarantine</groups>
+                            <excludedGroups combine.self="override"></excludedGroups>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <properties>
@@ -320,6 +372,7 @@
         <junit.version>5.14.4</junit.version>
         <junit.platform.version>1.14.4</junit.platform.version>
         <org.testfx.testfx-core.version>4.0.18</org.testfx.testfx-core.version>
+        <org.testfx.openjfx-monocle.version>21.0.2</org.testfx.openjfx-monocle.version>
         <de.jensd.fontawesomefx.version>8.9</de.jensd.fontawesomefx.version>
 
         <maven.release.version>3.3.1</maven.release.version>
