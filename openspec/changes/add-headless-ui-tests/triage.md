@@ -45,3 +45,7 @@ The first future flaky or environment-dependent test gets `@Tag("quarantine")` p
 
 - Bisection path: full-suite failure → predecessor-prefix subset → first half → `{BuildersTest, ChildInterceptorTest}` → `ChildInterceptorTest` + `CustomControlsTest` (red), while every other single predecessor was green.
 - No deterministic framework-side (skins/CSS/events) failure surfaced, so task 2.2 has no targets under the current baseline.
+- Artifact identity (task 5.1): the jar is not byte-reproducible (zip entry timestamps differ on
+  every build, even same-profile back-to-back), so identity was verified by content: `mvnw
+  dependency:list` with and without `-Pheadless` is identical, and an extracted-contents
+  `diff -rq` of the two jars is empty (class files byte-identical).
