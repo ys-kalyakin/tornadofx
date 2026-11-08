@@ -13,7 +13,9 @@ the 1.7.20 release.
   classifiers) and published as Java 17 bytecode. JavaFX 8 / JDK 8 support is
   dropped; consumers need a JDK 17+ runtime with JavaFX 21.
 - **Kotlin 2.x (K2)**: built with Kotlin 2 and `jvmTarget` 17. Consumers must
-  build with Kotlin 2.x and `jvmTarget` 17.
+  build with Kotlin 2.3 or newer and `jvmTarget` 17: the framework ships Kotlin
+  metadata 2.4.0, and a Kotlin compiler reads metadata up to one minor version
+  ahead.
 - **REST client**: `Rest` is ported from Apache HttpClient 4 to **HttpClient 5**
   (`org.apache.httpcomponents.client5:httpclient5`, `provided` scope). The public
   `HttpClientEngine`, `HttpClientRequest` and `HttpClientResponse` classes now
