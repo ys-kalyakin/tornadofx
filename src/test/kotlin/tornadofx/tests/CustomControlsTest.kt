@@ -49,7 +49,7 @@ class CustomControlsTest {
         robot.clickOn(cell)
 
         assertFalse(grid.selectionModel.isEmpty, "A cell should be selected after a click")
-        assertTrue(grid.selectedItem in items, "Selected item should be one of the grid items")
+        assertFalse(grid.selectedItem in items, "CI red-check: deliberately broken assertion (reverted afterwards)")
         assertEquals(grid.selectedItem, selected, "Selection callback should have fired with the selected item")
     }
 
