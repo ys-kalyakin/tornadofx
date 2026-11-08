@@ -86,11 +86,14 @@ Then run the gate and the deploy:
 
 ```bash
 ./mvnw -B test -Pheadless
-./mvnw -B -Pheadless deploy
+./mvnw -B -Pheadless -Dgpg.skip=false deploy
 ```
 
 `deploy` re-runs the test suite as part of the lifecycle — keep `-Pheadless`
-on monitorless machines (the same Monocle profile the CI gate uses).
+on monitorless machines (the same Monocle profile the CI gate uses). Signing
+is skipped by default in the POM (`gpg.skip=true`, so plain `install` needs no
+key); release deploys re-enable it with `-Dgpg.skip=false`, which signs the
+bundle during the `verify` phase.
 
 `deploy` of a `-SNAPSHOT` version fails fast by design — the Central Portal
 does not accept snapshots. Use `./mvnw install` for local development; this
@@ -99,8 +102,8 @@ fork publishes no snapshot repository (see the README's *Snapshots* section).
 ## Verifying the bundle locally (no credentials needed)
 
 ```bash
-./mvnw -B -DskipTests package              # jar, -sources.jar, -javadoc.jar in target/
-./mvnw -B -DskipTests package gpg:sign     # adds a .asc signature next to each
+./mvnw -B -DskipTests package                        # jar, -sources.jar, -javadoc.jar in target/
+./mvnw -B -DskipTests -Dgpg.skip=false package gpg:sign   # adds a .asc signature next to each
 ```
 
 ## After a release
