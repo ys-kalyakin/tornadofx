@@ -131,3 +131,65 @@ runAsync {
     customerTable.items = it
 }
 ```
+
+## Типизированный JSON с kotlinx.serialization
+
+Помимо слоя `JsonModel`/`JsonValue`, описанного выше, клиент `Rest`
+интегрируется с [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization):
+ответы декодируются в `@Serializable`-значения, а тела запросов кодируются из
+них:
+
+```kotlin
+@Serializable
+data class PersonDto(val name: String, val age: Int = 0)
+
+val person = api.get("people/1").value<PersonDto>()       // тело-объект
+val people = api.get("people").value<List<PersonDto>>()   // тело-массив
+
+api.post("people", PersonDto("Edvin", 30))                // тело в JSON
+api.put("people/1", PersonDto("Edvin", 31))
+```
+
+У каждой функции моста есть и вариант с явным сериализатором — он выручает для
+типов, которые reified-версия выразить не может:
+
+```kotlin
+val person = api.get("people/1").value(PersonDto.serializer())
+api.post("people", PersonDto.serializer(), PersonDto("Edvin", 30))
+```
+
+Ошибки декодирования — битый JSON или тело, не совпадающее с целевым типом, —
+бросают `RestException` с запросом и ответом внутри, как и `one()`/`list()`.
+**Пустое тело декодировать не удастся**: в отличие от `one()`/`list()`,
+возвращающих пустые контейнеры, у типизированного декодирования нет нулевого
+значения, которое можно было бы подставить.
+
+Инстанс `Json` по умолчанию игнорирует неизвестные ключи и настраивается
+глобально и на вызов:
+
+```kotlin
+restJson = Json { ignoreUnknownKeys = false }              // глобально
+
+api.get("people/1").value<PersonDto>(
+    Json { ignoreUnknownKeys = false })                    // на вызов
+```
+
+### Опциональная зависимость
+
+kotlinx-serialization поставляется как **provided**-зависимость, как HttpClient 5
+и kotlinx-coroutines: объявите её в своей сборке, чтобы пользоваться мостом, а
+потребители, которым он не нужен, останутся незатронуты:
+
+```xml
+<dependency>
+    <groupId>org.jetbrains.kotlinx</groupId>
+    <artifactId>kotlinx-serialization-json</artifactId>
+    <version>1.11.0</version>
+</dependency>
+```
+
+Ваши `@Serializable`-классы компилирует компиляторный плагин
+kotlinx.serialization — подключите его в своей сборке:
+`org.jetbrains.kotlin.plugin.serialization` в Gradle или
+`kotlin-maven-serialization` в Maven, версия — в соответствии с вашей версией
+Kotlin.

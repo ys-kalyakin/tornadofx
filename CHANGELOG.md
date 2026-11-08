@@ -24,6 +24,23 @@
     the running coroutine at its next suspension point, and a
     `CancellationException` escaping the body lands the task in the cancelled
     state rather than failed.
+- **kotlinx.serialization bridge for the REST client** (opt-in):
+  `kotlinx-serialization-core` and `kotlinx-serialization-json` are compiled
+  against with `provided` scope — declare them yourself when you use the
+  bridge; the legacy `JsonModel`/`JsonValue` conversion and all existing `Rest`
+  behavior are unchanged.
+  - `Rest.Response.value<T>()` / `value(deserializer)` decode a response body
+    into a `@Serializable` value (a JSON object into the type, a JSON array
+    into `List<T>`), consuming the response like `one()`/`list()`; decode
+    failures and empty bodies throw `RestException` carrying the request and
+    response.
+  - `post`/`put`/`patch`/`delete` accept a `@Serializable` body in reified and
+    explicit-serializer overloads: the value is encoded to JSON and sent with
+    `Content-Type: application/json` through the unchanged engine path, with
+    the concrete `JsonValue`/`JsonModel`/`InputStream` overloads keeping
+    precedence for those argument types.
+  - The `Json` instance defaults to ignoring unknown keys and is configurable
+    globally via `restJson` and per call on every bridge function.
 
 ### Changed
 

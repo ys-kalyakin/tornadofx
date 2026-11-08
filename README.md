@@ -31,6 +31,9 @@ support was removed together with the Java 8/JavaFX 8 era stack.
 - EventBus with thread targeting
 - Hot reload of Views and Stylesheets
 - REST client with automatic JSON conversion (Apache HttpClient 5)
+- kotlinx.serialization bridge for the REST client: decode responses into
+  `@Serializable` types and send typed request bodies (opt-in
+  kotlinx-serialization dependency)
 - Zero config, no XML, no annotations
 
 ## Important version note
@@ -201,6 +204,22 @@ with (api) {
 }
 ```
     
+With the opt-in kotlinx-serialization dependency, REST responses decode into
+`@Serializable` types and request bodies encode from them — no reflection-based
+mapping involved. TornadoFX compiles against `kotlinx-serialization-core` and
+`kotlinx-serialization-json` as `provided` dependencies and never pulls them
+transitively — declare kotlinx-serialization yourself and apply its compiler
+plugin to your build for your `@Serializable` classes; the classic
+`JsonModel`/`JsonValue` conversion works without them:
+
+```kotlin
+@Serializable
+data class CustomerDto(val name: String)
+
+val customer = api.get("customers/1").value<CustomerDto>()
+api.post("customers", CustomerDto("Edvin"))
+```
+
 Load customers in the background and update a TableView on the UI thread:
 
 ```kotlin

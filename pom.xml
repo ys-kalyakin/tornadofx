@@ -24,6 +24,21 @@
             <version>${org.apache.httpcomponents.httpclient5.version}</version>
             <scope>provided</scope>
         </dependency>
+        <!-- Serialization bridge (Serialization.kt): same opt-in pattern as Rest/HttpClient 5
+             and the coroutine bridge. Consumers declare kotlinx-serialization themselves;
+             classic JSON usage is unaffected when these are absent at runtime. -->
+        <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-serialization-core</artifactId>
+            <version>${kotlinx.serialization.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-serialization-json</artifactId>
+            <version>${kotlinx.serialization.version}</version>
+            <scope>provided</scope>
+        </dependency>
         <!-- Coroutine bridge (Coroutines.kt): same opt-in pattern as Rest/HttpClient 5.
              Consumers declare kotlinx-coroutines themselves; classic async usage is
              unaffected when these are absent at runtime. -->
@@ -179,6 +194,19 @@
                 <artifactId>kotlin-maven-plugin</artifactId>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <version>${kotlin.version}</version>
+                <!-- kotlinx.serialization compiler plugin (the org.jetbrains.kotlin
+                     .plugin.serialization Gradle plugin, wired the Maven way: a
+                     KotlinMavenPluginExtension picked up from the compiler plugin's
+                     own dependencies). Test fixtures declare @Serializable models;
+                     main sources contain none, so this is a no-op there. Consumers
+                     apply the plugin in their own builds for their own classes. -->
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-serialization</artifactId>
+                        <version>${kotlin.version}</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
                     <jvmTarget>17</jvmTarget>
                 </configuration>
@@ -384,6 +412,7 @@
         <org.apache.httpcomponents.httpclient.version>4.5.13</org.apache.httpcomponents.httpclient.version>
         <org.apache.httpcomponents.httpclient5.version>5.6.5</org.apache.httpcomponents.httpclient5.version>
         <kotlinx.coroutines.version>1.10.2</kotlinx.coroutines.version>
+        <kotlinx.serialization.version>1.11.0</kotlinx.serialization.version>
         <junit.version>5.14.4</junit.version>
         <junit.platform.version>1.14.4</junit.platform.version>
         <org.testfx.testfx-core.version>4.0.18</org.testfx.testfx-core.version>
