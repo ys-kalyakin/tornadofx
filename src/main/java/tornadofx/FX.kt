@@ -218,9 +218,12 @@ class FX {
 
             // queue on JavaFX thread and wait for completion
             val doneLatch = CountDownLatch(1)
+            var thrown: Throwable? = null
             Platform.runLater {
                 try {
                     action()
+                } catch (t: Throwable) {
+                    thrown = t
                 } finally {
                     doneLatch.countDown()
                 }
@@ -231,6 +234,11 @@ class FX {
             } catch (e: InterruptedException) {
                 // ignore exception
             }
+
+            // Propagate the action's failure to the waiting thread instead of
+            // leaving it uncaught on the JavaFX thread, where it would vanish
+            // (or resurface later through a global uncaught-exception handler).
+            thrown?.let { throw it }
         }
 
         @JvmStatic

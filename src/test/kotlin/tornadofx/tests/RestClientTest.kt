@@ -146,5 +146,6 @@ class RestClientTest {
             rest.get("/slow") { it.properties["tornadofx.requestTimeoutMs"] = 300L }
         }
         Assert.assertNotNull(exception.cause, "The timeout failure should carry the underlying cause")
+        FX.runAndWait { Assert.assertEquals(0, Rest.ongoingRequests.size) }
     }
 }
