@@ -1,23 +1,10 @@
 package tornadofx
 
-import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
-import java.security.AccessController
-import java.security.PrivilegedActionException
-import java.security.PrivilegedExceptionAction
 import java.text.MessageFormat
 import java.util.*
-
-private fun <EXCEPTION: Throwable, RETURN> doPrivileged(privilegedAction: ()->RETURN) : RETURN = try {
-    AccessController.doPrivileged(
-            PrivilegedExceptionAction<RETURN> {  privilegedAction() }
-    )
-} catch (e: PrivilegedActionException) {
-    @Suppress("UNCHECKED_CAST")
-    throw e.exception as EXCEPTION
-}
 
 
 object FXResourceBundleControl : ResourceBundle.Control() {
@@ -31,18 +18,20 @@ object FXResourceBundleControl : ResourceBundle.Control() {
                 val bundleClass = loader.loadClass(bundleName) as Class<out ResourceBundle>
 
                 // If the class isn't a ResourceBundle subclass, throw a ClassCastException.
-                if (ResourceBundle::class.java.isAssignableFrom(bundleClass)) bundleClass.newInstance()
+                if (ResourceBundle::class.java.isAssignableFrom(bundleClass)) bundleClass.newInstanceNoArg()
                 else throw ClassCastException(bundleClass.name + " cannot be cast to ResourceBundle")
 
             } catch (e: ClassNotFoundException) { null }
             "java.properties" -> {
                 val resourceName: String = toResourceName(bundleName, "properties")
-                doPrivileged<IOException, InputStream?> {
-                    if (!reload) loader.getResourceAsStream(resourceName)
+                // java.security.AccessController.doPrivileged used to wrap this block; on the
+                // JDK 17+ baseline (no SecurityManager) it was a pass-through, so the resource
+                // is now loaded directly.
+                val stream: InputStream? = if (!reload) loader.getResourceAsStream(resourceName)
                     else loader.getResource(resourceName)?.openConnection()?.apply {
                         useCaches = false // Disable caches to get fresh data for reloading.
-                    } ?.inputStream
-                }?.use { FXPropertyResourceBundle(InputStreamReader(it, StandardCharsets.UTF_8)) }
+                    }?.inputStream
+                stream?.use { FXPropertyResourceBundle(InputStreamReader(it, StandardCharsets.UTF_8)) }
             }
             else -> throw IllegalArgumentException("unknown format: $format")
         }!!

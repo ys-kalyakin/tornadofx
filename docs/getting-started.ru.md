@@ -16,14 +16,14 @@
 
 ## Maven
 
-Подключите зависимость фреймворка (текущая ветка форка: `1.7.21-SNAPSHOT`,
-последний стабильный релиз upstream: `1.7.20`):
+Подключите зависимость фреймворка (текущий релиз: `2.0.0`, опубликован в Maven
+Central под неймспейсом форка `io.github.ys-kalyakin`):
 
 ```xml
 <dependency>
-    <groupId>no.tornado</groupId>
+    <groupId>io.github.ys-kalyakin</groupId>
     <artifactId>tornadofx</artifactId>
-    <version>1.7.21-SNAPSHOT</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
@@ -51,7 +51,7 @@
 
 ```groovy
 dependencies {
-    implementation 'no.tornado:tornadofx:1.7.21-SNAPSHOT'
+    implementation 'io.github.ys-kalyakin:tornadofx:2.0.0'
     implementation 'org.openjfx:javafx-controls:21:linux'
 }
 

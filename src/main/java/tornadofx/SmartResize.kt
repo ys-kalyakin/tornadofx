@@ -449,7 +449,7 @@ fun <K> Map<K,Collection<*>>.countValues(key: K) = this[key]?.size ?: 0
 
 
 private fun GroupedColumns.totalWeightOfWeightedColumns() = this[Weight::class]?.run {
-    map { it.resizeType as ResizeType.Weight }.sumByDouble { it.weight as Double }
+    map { it.resizeType as ResizeType.Weight }.sumOf { it.weight as Double }
 } ?: 0.0
 
 
@@ -506,7 +506,7 @@ private fun GroupedColumns.resizePctColumns(contentWidth: Double): Double {
         val widthPerPct = contentWidth / 100.0
         pctColumn.forEach {
             val rt = it.resizeType as ResizeType.Pct
-            it.prefWidth = (widthPerPct * rt.value.toDouble()) + rt.delta.toDouble()
+            it.prefWidth = (widthPerPct * rt.value.toDouble()) + rt.delta
             spaceNeeded += it.width
         }
     }
@@ -552,7 +552,7 @@ private fun GroupedColumns.resizePreferredColumns(): Double {
     var spaceNeeded = 0.0
     this[Pref::class]?.forEach {
         val rt = it.resizeType as ResizeType.Pref
-        it.prefWidth = rt.width.toDouble() + rt.delta.toDouble()
+        it.prefWidth = rt.width.toDouble() + rt.delta
         spaceNeeded += it.width
     }
     return spaceNeeded

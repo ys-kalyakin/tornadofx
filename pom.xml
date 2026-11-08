@@ -4,13 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>no.tornado</groupId>
+    <groupId>io.github.ys-kalyakin</groupId>
     <artifactId>tornadofx</artifactId>
-    <version>1.7.21-SNAPSHOT</version>
+    <version>2.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>TornadoFX</name>
     <description>Lightweight JavaFX Framework for Kotlin</description>
-    <url>https://github.com/edvin/tornadofx</url>
+    <url>https://github.com/ys-kalyakin/tornadofx</url>
 
     <dependencies>
         <dependency>
@@ -117,23 +117,6 @@
         </dependency>
     </dependencies>
 
-    <distributionManagement>
-        <repository>
-            <id>sonatype-nexus</id>
-            <name>Nexus Release Repository</name>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-        <snapshotRepository>
-            <id>sonatype-nexus</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-    </distributionManagement>
-
-    <organization>
-        <name>SYSE</name>
-        <url>https://www.syse.no/</url>
-    </organization>
-
     <licenses>
         <license>
             <name>The Apache License, Version 2.0</name>
@@ -142,6 +125,11 @@
     </licenses>
 
     <developers>
+        <developer>
+            <name>ys-kalyakin</name>
+            <email>ys.kalyakin@gmail.com</email>
+            <organizationUrl>https://github.com/ys-kalyakin</organizationUrl>
+        </developer>
         <developer>
             <name>Edvin Syse</name>
             <email>es@syse.no</email>
@@ -163,28 +151,13 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git@github.com:edvin/tornadofx.git</connection>
-        <developerConnection>scm:git:git@github.com:edvin/tornadofx.git</developerConnection>
-        <url>git@github.com:edvin/tornadofx.git</url>
+        <connection>scm:git:https://github.com/ys-kalyakin/tornadofx.git</connection>
+        <developerConnection>scm:git:https://github.com/ys-kalyakin/tornadofx.git</developerConnection>
+        <url>https://github.com/ys-kalyakin/tornadofx</url>
     </scm>
 
     <build>
         <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
-
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-release-plugin</artifactId>
-                    <version>${maven.release.version}</version>
-                    <configuration>
-                        <mavenExecutorId>forked-path</mavenExecutorId>
-                        <useReleaseProfile>false</useReleaseProfile>
-                        <arguments>-Psonatype-oss-release</arguments>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
 
         <plugins>
             <plugin>
@@ -264,9 +237,28 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.12.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                    <autoPublish>true</autoPublish>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
                 <version>${maven.gpg.version}</version>
+                <configuration>
+                    <!-- Dedicated release signing key; its public half must be
+                         on a keyserver for Central Portal validation. -->
+                    <keyname>08BCB465BBE68556DE7E9368A893385C5CFEC2EE</keyname>
+                    <gpgArguments>
+                        <arg>--pinentry-mode</arg>
+                        <arg>loopback</arg>
+                    </gpgArguments>
+                </configuration>
                 <executions>
                     <execution>
                         <id>sign-artifacts</id>
@@ -375,7 +367,6 @@
         <org.testfx.openjfx-monocle.version>21.0.2</org.testfx.openjfx-monocle.version>
         <de.jensd.fontawesomefx.version>8.9</de.jensd.fontawesomefx.version>
 
-        <maven.release.version>3.3.1</maven.release.version>
         <maven.compiler.version>3.16.0</maven.compiler.version>
         <maven.source.version>3.4.0</maven.source.version>
         <maven.jar.version>3.5.1</maven.jar.version>

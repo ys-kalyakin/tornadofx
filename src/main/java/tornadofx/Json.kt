@@ -85,7 +85,7 @@ interface JsonModel {
     @Suppress("UNCHECKED_CAST")
     fun <T : JsonModel> copy(): T {
         try {
-            val clone = javaClass.newInstance() as T
+            val clone = javaClass.newInstanceNoArg() as T
             val builder = JsonBuilder()
             toJSON(builder)
             clone.updateModel(builder.build())
@@ -152,7 +152,7 @@ fun JsonObject.int(vararg key: String): Int? = firstNonNull(*key) { getInt(it) }
 fun JsonObject.getInt(vararg key: String): Int = int(*key)!!
 
 fun JsonObject.jsonObject(vararg key: String): JsonObject? = firstNonNull(*key) { getJsonObject(it) }
-inline fun <reified T : JsonModel> JsonObject.jsonModel(vararg key: String) = firstNonNull(*key) { T::class.java.newInstance().apply { updateModel(getJsonObject(it)) } }
+inline fun <reified T : JsonModel> JsonObject.jsonModel(vararg key: String) = firstNonNull(*key) { T::class.java.newInstanceNoArg().apply { updateModel(getJsonObject(it)) } }
 
 fun JsonObject.jsonArray(vararg key: String): JsonArray? = firstNonNull(*key) { getJsonArray(it) }
 
@@ -243,26 +243,28 @@ class JsonBuilder {
             delegate.add(key, value)
     }
 
-    fun add(key: String, value: Iterable<Any>?) = apply {
-        if (value != null) {
-            val builder = Json.createArrayBuilder()
-            value.forEach {
-                when (it) {
-                    is Int -> builder.add(it)
-                    is String -> builder.add(it)
-                    is Float -> builder.add(it.toDouble())
-                    is Long -> builder.add(it)
-                    is BigDecimal -> builder.add(it)
-                    is Boolean -> builder.add(it)
-                    is JsonModel -> builder.add(it.toJSON())
-                    is JsonArray -> builder.add(it)
-                    is JsonArrayBuilder -> builder.add(it)
-                    is JsonObject -> builder.add(it)
-                    is JsonObjectBuilder -> builder.add(it)
-                    is JsonValue -> builder.add(it)
+    fun add(key: String, value: Iterable<Any>?): JsonBuilder {
+        apply {
+            if (value != null) {
+                val builder = Json.createArrayBuilder()
+                value.forEach {
+                    when (it) {
+                        is Int -> builder.add(it)
+                        is String -> builder.add(it)
+                        is Float -> builder.add(it.toDouble())
+                        is Long -> builder.add(it)
+                        is BigDecimal -> builder.add(it)
+                        is Boolean -> builder.add(it)
+                        is JsonModel -> builder.add(it.toJSON())
+                        is JsonArray -> builder.add(it)
+                        is JsonArrayBuilder -> builder.add(it)
+                        is JsonObject -> builder.add(it)
+                        is JsonObjectBuilder -> builder.add(it)
+                        is JsonValue -> builder.add(it)
+                    }
                 }
+                delegate.add(key, builder.build())
             }
-            delegate.add(key, builder.build())
         }
 
         return this
@@ -305,7 +307,7 @@ interface JsonModelAuto : JsonModel {
                     when (it.generic()) {
                         Boolean::class.java -> (pr as ObjectProperty<Boolean>).value = json.bool(it.name)
                         Long::class.java -> (pr as ObjectProperty<Long>).value = json.long(it.name)
-                        Integer::class.java -> (pr as ObjectProperty<Int>).value = json.int(it.name)
+                        Int::class.java -> (pr as ObjectProperty<Int>).value = json.int(it.name)
                         Double::class.java -> (pr as ObjectProperty<Double>).value = json.double(it.name)
                         Float::class.java -> (pr as ObjectProperty<Float>).value = json.float(it.name)
                         String::class.java -> (pr as ObjectProperty<String>).value = json.string(it.name)
@@ -317,7 +319,7 @@ interface JsonModelAuto : JsonModel {
                     val list = pr as MutableList<Any>
                     list.clear()
                     json.getJsonArray(it.name)?.forEach { jsonObj ->
-                        val entry = it.generic().newInstance()
+                        val entry = it.generic().newInstanceNoArg()
                         if (entry is JsonModel) {
                             list.add(entry.apply { updateModel(jsonObj as JsonObject) })
                         }
@@ -330,8 +332,8 @@ interface JsonModelAuto : JsonModel {
                             Boolean::class.javaObjectType -> (it as KMutableProperty1<Any?, Boolean?>).set(this, json.bool(it.name))
                             Long::class.javaObjectType -> (it as KMutableProperty1<Any?, Long?>).set(this, json.long(it.name))
                             Long::class.javaPrimitiveType -> (it as KMutableProperty1<Any?, Long?>).set(this, json.long(it.name))
-                            Integer::class.javaObjectType -> (it as KMutableProperty1<Any?, Int?>).set(this, json.int(it.name))
-                            Integer::class.javaPrimitiveType -> (it as KMutableProperty1<Any?, Int?>).set(this, json.int(it.name))
+                            Int::class.javaObjectType -> (it as KMutableProperty1<Any?, Int?>).set(this, json.int(it.name))
+                            Int::class.javaPrimitiveType -> (it as KMutableProperty1<Any?, Int?>).set(this, json.int(it.name))
                             Double::class.javaObjectType -> (it as KMutableProperty1<Any?, Double?>).set(this, json.double(it.name))
                             Double::class.javaPrimitiveType -> (it as KMutableProperty1<Any?, Double?>).set(this, json.double(it.name))
                             Float::class.javaObjectType -> (it as KMutableProperty1<Any?, Float?>).set(this, json.float(it.name))
@@ -363,7 +365,7 @@ interface JsonModelAuto : JsonModel {
                         when (it.generic()) {
                             Boolean::class.java -> add(it.name, (pr as ObjectProperty<Boolean>).value)
                             Long::class.java -> add(it.name, (pr as ObjectProperty<Long>).value)
-                            Integer::class.java -> add(it.name, (pr as ObjectProperty<Int>).value)
+                            Int::class.java -> add(it.name, (pr as ObjectProperty<Int>).value)
                             Double::class.java -> add(it.name, (pr as ObjectProperty<Double>).value)
                             Float::class.java -> add(it.name, (pr as ObjectProperty<Float>).value)
                             String::class.java -> add(it.name, (pr as ObjectProperty<String>).value)

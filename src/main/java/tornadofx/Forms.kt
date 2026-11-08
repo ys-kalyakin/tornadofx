@@ -63,7 +63,7 @@ open class Form : VBox() {
     }
 
     internal fun labelContainerWidth(height: Double): Double
-            = fieldsets.flatMap { it.fields }.map { it.labelContainer }.map { f -> f.prefWidth(-height) }.max() ?: 0.0
+            = fieldsets.flatMap { it.fields }.map { it.labelContainer }.map { f -> f.prefWidth(-height) }.max()
 
     internal val fieldsets = HashSet<Fieldset>()
 

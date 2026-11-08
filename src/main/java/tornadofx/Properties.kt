@@ -84,7 +84,7 @@ fun <S, T> observable(owner: S, prop: KProperty1<S, T>): ReadOnlyObjectProperty<
  * Example: val observableName = observable(myPojo, MyPojo::getName, MyPojo::setName)
  */
 fun <S : Any, T> observable(bean: S, getter: KFunction<T>, setter: KFunction2<S, T, Unit>): PojoProperty<T> {
-    val propName = getter.name.substring(3).decapitalize()
+    val propName = getter.name.substring(3).replaceFirstChar { it.lowercaseChar() }
 
     return object : PojoProperty<T>(bean, propName) {
         override fun get() = getter.call(bean)
@@ -123,7 +123,7 @@ fun <S : Any, T : Any> S.observable(
 ): ObjectProperty<T> {
     if (getter == null && propertyName == null) throw AssertionError("Either getter or propertyName must be provided")
     val propName = propertyName
-            ?: getter?.name?.substring(3)?.decapitalize()
+            ?: getter?.name?.substring(3)?.replaceFirstChar { it.lowercaseChar() }
 
     return JavaBeanObjectPropertyBuilder.create().apply {
         bean(this@observable)

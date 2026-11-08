@@ -1,13 +1,19 @@
 # Change Log
 
-## [1.7.21-SNAPSHOT] — modern stack
+## [2.0.0] — modern stack on new coordinates
 
-This release modernizes the framework onto the current Java stack. It is a
-deliberate compatibility break; consumers who cannot migrate should stay on
-the 1.7.20 release.
+This release modernizes the framework onto the current Java stack and moves it
+to the fork's own Maven Central coordinates. It is a deliberate compatibility
+break; consumers who cannot migrate should stay on the 1.7.20 release.
 
 ### Breaking changes
 
+- **New Maven coordinates**: the fork publishes as
+  `io.github.ys-kalyakin:tornadofx` (starting with this release) instead of
+  `no.tornado:tornadofx`. The artifactId and the package names (`tornadofx.*`)
+  are unchanged — only the Maven coordinates move. Update the `groupId` in your
+  dependency declarations; old 1.7.x releases remain available under the old
+  coordinates.
 - **Platform baseline**: the framework is built with a JDK 21 toolchain, compiled
   against **OpenJFX 21** (now declared as Maven dependencies with platform
   classifiers) and published as Java 17 bytecode. JavaFX 8 / JDK 8 support is
@@ -54,20 +60,11 @@ the 1.7.20 release.
 ### Fixed
 
 - [#1157](https://github.com/edvin/tornadofx/issues/1157): cellFormat removes default style classes on cleanUp
+- [#1163](https://github.com/edvin/tornadofx/issues/1163): Workspace right drawer doesn't handle floating correctly
 - `HttpClientRequest.getHeader` read the literal header name `"name"` instead of
   the requested name, breaking `AuthContext` digest retry detection.
 - `App.determinePrimaryView` no longer fails when an `App` instance is created
   without `Application.launch` (`getParameters()` is null on JavaFX 21).
-
-## [1.7.21-SNAPSHOT] (pre-existing duplicate entry)
-
-### Fixed
-
-- [#991](https://github.com/edvin/tornadofx/issues/1163): Workspace right drawer doesn't handle floating correctly
-
-### Changes
-
-### Additions
 
 ## [1.7.20]
 

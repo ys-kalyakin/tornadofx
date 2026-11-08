@@ -1,0 +1,102 @@
+name: Release
+
+# Publishes a release to Maven Central through the Sonatype Central Portal.
+# Triggered by pushing a v* tag (v2.0.0 -> version 2.0.0) or manually with an
+# explicit version. See RELEASING.md for the one-time setup and the runbook.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (tag name without the leading v, e.g. 2.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Test, sign, publish to Maven Central
+    runs-on: ubuntu-latest
+    env:
+      # maven-gpg-plugin reads the signing passphrase from this variable.
+      MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Corretto) and import the release GPG key
+        uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: '21'
+          cache: maven
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: GPG_PASSPHRASE
+
+      - name: Resolve release version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          case "$VERSION" in
+            *SNAPSHOT*)
+              echo "::error::Refusing to publish a SNAPSHOT version: $VERSION"
+              exit 1 ;;
+          esac
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Stamp the POM with the release version
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          ./mvnw -B org.codehaus.mojo:versions-maven-plugin:2.24.0:set \
+            -DnewVersion="$VERSION" -DgenerateBackupPoms=false
+          POM_VERSION="$(./mvnw -B -q help:evaluate -Dexpression=project.version -DforceStdout)"
+          if [ "$POM_VERSION" != "$VERSION" ]; then
+            echo "::error::POM version ($POM_VERSION) does not match the release version ($VERSION)"
+            exit 1
+          fi
+
+      - name: Run the headless test suite (release gate)
+        run: ./mvnw -B test -Pheadless
+
+      - name: Configure the Central Portal credentials
+        run: |
+          mkdir -p "$HOME/.m2"
+          cat > "$HOME/.m2/settings.xml" <<'SETTINGS'
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
+            <servers>
+              <server>
+                <id>central</id>
+                <username>${env.CENTRAL_USERNAME}</username>
+                <password>${env.CENTRAL_PASSWORD}</password>
+              </server>
+            </servers>
+          </settings>
+          SETTINGS
+        env:
+          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+
+      - name: Publish the release to Maven Central
+        run: ./mvnw -B -ntp deploy
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          gh release create "v$VERSION" \
+            --title "TornadoFX $VERSION" \
+            --generate-notes \
+            --target "$GITHUB_SHA"

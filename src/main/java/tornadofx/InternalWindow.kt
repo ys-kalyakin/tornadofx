@@ -133,7 +133,7 @@ class InternalWindow(icon: Node?, modal: Boolean, escapeClosesWindow: Boolean, c
         }
     }
 
-    override fun getUserAgentStylesheet(): String = URL("css://${Styles::class.java.name}").toExternalForm()
+    override fun getUserAgentStylesheet(): String = "css://${Styles::class.java.name}".toUrlCompat().toExternalForm()
 
     fun fillOverlay() {
         overlay?.graphicsContext2D.apply {

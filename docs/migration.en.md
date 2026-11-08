@@ -5,6 +5,17 @@ compatibility break from the 1.7.20 release. Consumers who cannot migrate
 should stay on 1.7.20. Every breaking change below mirrors the
 [project change log](https://github.com/ys-kalyakin/tornadofx/blob/master/CHANGELOG.md).
 
+## New Maven coordinates (2.0.0)
+
+- The fork publishes as **`io.github.ys-kalyakin:tornadofx`** (first release:
+  `2.0.0`) instead of `no.tornado:tornadofx`. The artifactId and all package
+  names (`tornadofx.*`) are unchanged — only the Maven coordinates move.
+- Update your dependency declarations: `<groupId>io.github.ys-kalyakin</groupId>`
+  in Maven, `io.github.ys-kalyakin:tornadofx:2.0.0` in Gradle
+  (see [Getting started](getting-started.md#maven)).
+- Old 1.7.x releases stay available on Maven Central under `no.tornado:tornadofx`;
+  this fork publishes no versions under the old coordinates.
+
 ## Platform baseline
 
 - The framework is built with a **JDK 21 toolchain**, compiled against

@@ -92,7 +92,7 @@ class ValidationContext {
     /**
      * Rerun all validators (or just the ones passed in) and return a boolean indicating if validation passed.
      */
-    fun validate(vararg fields: ObservableValue<*>) = validate(true, true,false, fields = *fields)
+    fun validate(vararg fields: ObservableValue<*>) = validate(true, true,false, fields = fields)
 
     /**
      * Rerun all validators (or just the ones passed in) and return a boolean indicating if validation passed.

@@ -17,6 +17,7 @@ import org.apache.hc.core5.http.ClassicHttpRequest
 import org.apache.hc.core5.http.ContentType
 import org.apache.hc.core5.http.HttpEntity
 import org.apache.hc.core5.http.HttpHost
+import org.apache.hc.core5.http.io.entity.ByteArrayEntity
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.http.io.entity.InputStreamEntity
 import org.apache.hc.core5.http.io.entity.StringEntity
@@ -450,11 +451,19 @@ class HttpClientRequest(val engine: HttpClientEngine, val client: CloseableHttpC
             }
         }
 
-        val httpResponse = client.execute(request, engine.context)
-
-        val response = HttpClientResponse(this, httpResponse)
-        val modifiedResponse = engine.rest.authContext?.interceptResponse(response) ?: response
-        engine.responseInterceptor?.invoke(modifiedResponse)
+        val modifiedResponse = client.execute(request, engine.context) { httpResponse ->
+            // The response-handler variant of execute closes the response when the handler
+            // returns, so the entity is buffered here to keep the body readable afterwards.
+            httpResponse.entity?.let { entity ->
+                val bytes = EntityUtils.toByteArray(entity)
+                val contentType = entity.contentType?.let { ContentType.parse(it) }
+                httpResponse.entity = ByteArrayEntity(bytes, contentType, entity.contentEncoding)
+            }
+            val response = HttpClientResponse(this, CloseableHttpResponse.adapt(httpResponse))
+            val interceptedResponse = engine.rest.authContext?.interceptResponse(response) ?: response
+            engine.responseInterceptor?.invoke(interceptedResponse)
+            interceptedResponse
+        }
         return modifiedResponse
     }
 
@@ -503,7 +512,7 @@ class HttpClientResponse(override val request: HttpClientRequest, val response: 
 }
 
 inline fun <reified T : JsonModel> JsonObject.toModel(): T {
-    val model = T::class.java.newInstance()
+    val model = T::class.java.newInstanceNoArg()
     model.updateModel(this)
     return model
 }
