@@ -70,3 +70,85 @@ runAsync { heavyComputation() }
 The framework shuts its thread pools down cleanly when the application stops
 (`ShutdownExecutor`), so you do not need to manage executor lifecycles in
 normal applications.
+
+## Coroutines
+
+Task bodies are suspend functions, so the async machinery integrates with
+`kotlinx.coroutines` directly. The coroutine support is opt-in: TornadoFX
+compiles against `kotlinx-coroutines-core` and `kotlinx-coroutines-javafx`
+as `provided` dependencies and never pulls them transitively — declare them
+yourself when you use the coroutine API:
+
+```xml
+<dependency>
+    <groupId>org.jetbrains.kotlinx</groupId>
+    <artifactId>kotlinx-coroutines-core</artifactId>
+    <version>1.10.2</version>
+</dependency>
+<dependency>
+    <groupId>org.jetbrains.kotlinx</groupId>
+    <artifactId>kotlinx-coroutines-javafx</artifactId>
+    <version>1.10.2</version>
+</dependency>
+```
+
+Classic `runAsync { } ui { }` chains keep working without these dependencies
+on the classpath.
+
+### Suspend task bodies
+
+`runAsync` and `task` bodies may suspend: call other suspend functions, hop
+to the UI thread with `ui { }` (a suspend member of the task), and report
+progress with `updateProgress`/`updateMessage`:
+
+```kotlin
+runAsync(status) {
+    updateMessage("Loading customers...")
+    val customers = api.fetchCustomers()          // suspend call
+    ui { customerTable.items = customers.asObservable() }
+    customers                                     // becomes the task value
+} ui {
+    statusLabel.text = "Loaded ${it.size} customers"
+}
+```
+
+Inside a suspend body, `ui { }` dispatches the block onto the JavaFX
+Application Thread immediately and resumes the body with the block's result;
+it runs inline, without a thread hop, when called from the UI thread itself.
+Note the difference from the `... ui { }` chain: the chain attaches a success
+callback to the task, while the suspend `ui { }` hops right now.
+
+### Awaiting tasks
+
+Any TornadoFX task — and any JavaFX `Task`/`Service` worker — can be awaited
+from a coroutine without blocking a thread. The task's failure is rethrown at
+the await site, and a cancelled task resumes the awaiting coroutine with a
+`CancellationException`:
+
+```kotlin
+scope.launch {
+    val customers = downloadTask.await()
+    withContext(Dispatchers.JavaFx) { customerTable.items = customers }
+}
+```
+
+### Cancellation mapping
+
+Cancellation works in both directions:
+
+- Cancelling the task cancels the running body: it stops at its next
+  suspension point and the task reports the cancelled state.
+- Cancelling the coroutine that awaits a running task cancels that task, so
+  no background work survives the awaiting coroutine.
+- A `CancellationException` escaping the body is treated as cancellation, not
+  failure: the task lands in the cancelled state.
+
+```kotlin
+val download = runAsync(status) {
+    updateMessage("Downloading...")
+    api.download().await()
+} ui { showResult(it) }
+
+// From anywhere, later:
+download.cancel()   // the body stops at its next suspension point
+```

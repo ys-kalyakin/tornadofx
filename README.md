@@ -26,6 +26,8 @@ support was removed together with the Java 8/JavaFX 8 era stack.
 - Type safe CSS builders
 - First class FXML support
 - Async task execution
+- Kotlin coroutines integration: suspend task bodies, `Task.await()`, `ui { }`
+  FX-thread dispatch (opt-in kotlinx-coroutines dependency)
 - EventBus with thread targeting
 - Hot reload of Views and Stylesheets
 - REST client with automatic JSON conversion (Apache HttpClient 5)
@@ -206,6 +208,27 @@ runAsync {
     controller.loadCustomers()
 } ui {
     customerTable.items = it
+}
+```
+
+With the opt-in kotlinx-coroutines dependency, task bodies become suspend
+functions: call other suspend functions, hop to the UI thread with `ui { }`,
+and await any task from a coroutine with `await()`. Cancellation is mapped in
+both directions — cancelling the task cancels the running coroutine at its
+next suspension point, and cancelling an awaiting coroutine cancels its task.
+TornadoFX compiles against `kotlinx-coroutines-core` and
+`kotlinx-coroutines-javafx` as `provided` dependencies and never pulls them
+transitively — declare them yourself when you use the coroutine API; classic
+`runAsync { } ui { }` chains work without them:
+
+```kotlin
+runAsync(status) {
+    updateMessage("Loading customers...")
+    val customers = controller.fetchCustomers()   // suspend call
+    ui { customerTable.items = customers }
+    customers
+} ui {
+    statusLabel.text = "Loaded ${it.size} customers"
 }
 ```
 

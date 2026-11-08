@@ -82,21 +82,39 @@ fun terminateAsyncExecutors(timeoutMillis: Long) {
     threadPools.clear()
 }
 
-fun <T> task(taskStatus: TaskStatus? = null, func: FXTask<*>.() -> T): Task<T> = task(daemon = false, taskStatus = taskStatus, func = func)
+/**
+ * Run [func] in the background on a framework worker thread.
+ *
+ * The body may suspend: call other suspend functions (e.g. [await]), hop to
+ * the FX application thread with [FXTask.ui], and report progress with
+ * [FXTask.updateProgress]/[FXTask.updateMessage]. Classic non-suspending
+ * lambdas keep compiling and behaving exactly as before.
+ *
+ * Cancelling the task cancels the running body at its next suspension point,
+ * and a [CancellationException] escaping the body is treated as cancellation,
+ * not failure: the task lands in the cancelled state.
+ *
+ * For long suspend waits prefer plain coroutines over long-lived
+ * coroutine-backed tasks: the worker thread is occupied for the whole
+ * duration, exactly like a classic task.
+ */
+fun <T> task(taskStatus: TaskStatus? = null, func: suspend FXTask<*>.() -> T): Task<T> = task(daemon = false, taskStatus = taskStatus, func = func)
 
-fun <T> task(daemon: Boolean = false, taskStatus: TaskStatus? = null, func: FXTask<*>.() -> T): Task<T> = FXTask(taskStatus, func = func).apply {
-    setOnFailed({ (Thread.getDefaultUncaughtExceptionHandler() ?: dummyUncaughtExceptionHandler).uncaughtException(Thread.currentThread(), exception) })
-    if (daemon) {
-        tfxDaemonThreadPool.execute(this)
-    } else {
-        tfxThreadPool.execute(this)
-    }
-}
+fun <T> task(daemon: Boolean = false, taskStatus: TaskStatus? = null, func: suspend FXTask<*>.() -> T): Task<T> = coroutineTask(daemon, taskStatus, func)
 
-fun <T> runAsync(status: TaskStatus? = null, func: FXTask<*>.() -> T) = task(status, func)
+fun <T> runAsync(status: TaskStatus? = null, func: suspend FXTask<*>.() -> T) = task(status, func)
 
-fun <T> runAsync(daemon: Boolean = false, status: TaskStatus? = null, func: FXTask<*>.() -> T) = task(daemon, status, func)
+fun <T> runAsync(daemon: Boolean = false, status: TaskStatus? = null, func: suspend FXTask<*>.() -> T) = task(daemon, status, func)
 
+/**
+ * Run [func] with this task's value when the task succeeds, on the FX
+ * application thread.
+ *
+ * Inside a suspend task body a bare `ui { }` call resolves to the suspend
+ * [FXTask.ui] member, which dispatches immediately onto the FX thread; this
+ * infix remains the success-callback chain form and is unaffected by that
+ * member.
+ */
 infix fun <T> Task<T>.ui(func: (T) -> Unit) = success(func)
 
 infix fun <T> Task<T>.success(func: (T) -> Unit) = apply {
@@ -500,6 +518,27 @@ class FXTask<T>(val status: TaskStatus? = null, val func: FXTask<*>.() -> T) : T
     public override fun updateMessage(m: String?) {
         super.updateMessage(m)
     }
+
+    /**
+     * Run [block] on the JavaFX Application Thread and resume the caller with
+     * its result. This is the suspend counterpart of the `ui` infix chain,
+     * for use inside suspend task bodies (see [tornadofx.task] and
+     * [tornadofx.runAsync]).
+     *
+     * As a member of FXTask it wins over the `Task.ui` infix for a bare
+     * `ui { }` call inside a suspend body, so the block dispatches immediately
+     * onto the FX thread instead of being deferred to the task's success
+     * handler. Called while already on the FX Application Thread, the block
+     * runs inline without a thread hop and without deadlock.
+     *
+     * ```kotlin
+     * runAsync {
+     *     val data = loadData().await()
+     *     ui { label.text = data }
+     * }
+     * ```
+     */
+    suspend fun <R> ui(block: () -> R): R = withFxThread(block)
 
 }
 

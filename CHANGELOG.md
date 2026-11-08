@@ -1,5 +1,39 @@
 # Change Log
 
+## [2.0.1] — unreleased
+
+### Added
+
+- **Kotlin coroutines integration** (opt-in): `kotlinx-coroutines-core` and
+  `kotlinx-coroutines-javafx` are compiled against with `provided` scope —
+  declare them yourself when you use the coroutine API; classic async usage
+  needs nothing coroutine-related on the classpath.
+  - `Task<T>.await()`: suspend until a task completes without blocking a
+    thread. Task failures are rethrown at the await site, a cancelled task
+    resumes the awaiting coroutine with a `CancellationException`, and
+    cancelling the awaiting coroutine cancels the underlying task.
+  - `runAsync`/`task` bodies are suspend functions: call other suspend
+    functions, hop to the UI thread, and report progress with
+    `updateProgress`/`updateMessage` from inside the body; the returned task
+    supports the existing `ui`/`fail`/`cancel` chains and `TaskStatus`
+    binding.
+  - The suspend `FXTask.ui { }` member dispatches a block onto the JavaFX
+    Application Thread immediately — inline, without a thread hop, when
+    called from the FX thread itself — and resumes the body with its result.
+  - Cancellation is mapped in both directions: cancelling the task cancels
+    the running coroutine at its next suspension point, and a
+    `CancellationException` escaping the body lands the task in the cancelled
+    state rather than failed.
+
+### Changed
+
+- The body parameter of `runAsync`/`task` is a suspend function type: the JVM
+  signatures of these functions changed, and pre-typed classic body values or
+  non-suspend function references must be reworked into lambda literals
+  (lambda literals compile unchanged). The worker thread's interrupt flag is
+  cleared when a cancelled task's body finishes, so pooled threads are no
+  longer left with a stale interrupt flag.
+
 ## [2.0.0] — modern stack on new coordinates
 
 This release modernizes the framework onto the current Java stack and moves it
