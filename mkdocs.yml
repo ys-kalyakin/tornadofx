@@ -1,0 +1,72 @@
+site_name: TornadoFX
+site_url: https://ys-kalyakin.github.io/tornadofx/
+site_description: >-
+  Documentation for the TornadoFX fork — the JavaFX framework for Kotlin
+  on a modern stack (JDK 21, OpenJFX 21, Kotlin 2.x).
+site_author: The TornadoFX project authors
+copyright: Copyright &copy; The TornadoFX project authors
+
+repo_url: https://github.com/ys-kalyakin/tornadofx
+repo_name: ys-kalyakin/tornadofx
+edit_uri: edit/master/docs/
+
+exclude_docs: |
+  requirements.txt
+  check-parity.py
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+  - i18n:
+      docs_structure: suffix
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: ru
+          name: Русский
+          build: true
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Views & DI: views.md
+  - Type-safe builders: builders.md
+  - FXML: fxml.md
+  - Type-safe stylesheets: stylesheets.md
+  - Properties & binding: properties.md
+  - Async: async.md
+  - EventBus: events.md
+  - REST client: rest.md
+  - Workspace & Wizard: workspace.md
+  - Validation: validation.md
+  - Migration from 1.7.20: migration.md
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
