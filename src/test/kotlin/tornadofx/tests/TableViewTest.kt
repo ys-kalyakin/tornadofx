@@ -7,7 +7,7 @@ import javafx.collections.FXCollections
 import javafx.scene.Scene
 import javafx.scene.layout.StackPane
 import javafx.stage.Stage
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import org.testfx.api.FxRobot
 import org.testfx.api.FxToolkit
 import tornadofx.*
@@ -44,6 +44,6 @@ class TableViewTest {
         }
 
         val robot = FxRobot()
-        robot.robotContext().captureSupport.saveImage(robot.capture(primaryStage.scene.root), Paths.get("example-table.png"))
+        robot.robotContext().captureSupport.saveImage(robot.capture(primaryStage.scene.root).getImage(), Paths.get("example-table.png"))
     }
 }

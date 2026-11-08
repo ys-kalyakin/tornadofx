@@ -3,18 +3,20 @@
 
 JavaFX Framework for Kotlin
 
-## (This project is no longer maintained)
-
-[![Travis CI](https://travis-ci.org/edvin/tornadofx.svg)](https://travis-ci.org/edvin/tornadofx)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/no.tornado/tornadofx/badge.svg?cachebust)](https://search.maven.org/#search|ga|1|no.tornado.tornadofx)
 [![Apache License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
-**Important: TornadoFX is not yet compatible with Java 9/10**
+## Supported stack
 
-Oracle is intending to decouple JavaFX from the JDK. We will wait
-until the decoupled JavaFX is available and stable before upgrading TornadoFX to support
-it. As of now there is little value and significant effort involved in updating to JDK 9/10,
-while there will be an enormous value in updating to the decoupled version.
+TornadoFX targets the modern JavaFX stack:
+
+- **Build toolchain:** JDK 21 (published bytecode is Java 17)
+- **JavaFX:** OpenJFX 21 (declared as a Maven dependency with platform classifiers)
+- **Kotlin:** 2.x (K2), `jvmTarget` 17
+
+Migrating from 1.7.x? See the breaking changes in the
+[Change Log](CHANGELOG.md). OSGi users must stay on the 1.7.x line — OSGi
+support was removed together with the Java 8/JavaFX 8 era stack.
 
 ## Features
 
@@ -26,15 +28,12 @@ while there will be an enormous value in updating to the decoupled version.
 - Async task execution
 - EventBus with thread targeting
 - Hot reload of Views and Stylesheets
-- OSGi support
-- REST client with automatic JSON conversion
+- REST client with automatic JSON conversion (Apache HttpClient 5)
 - Zero config, no XML, no annotations
 
 ## Important version note
 
-TornadoFX requires Kotlin 1.1.2 and jvmTarget 1.8. Make sure you update your IDE plugins (Kotlin + TornadoFX).
-
-After updating IntelliJ IDEA, make sure your Kotlin target version is 1.1 (Project Settings -> Modules -> Kotlin -> Language Version / API Version)
+TornadoFX requires Kotlin 2.x and jvmTarget 17. Make sure you update your IDE plugins (Kotlin).
 
 Remember to update your build system to configure the `jvmTarget` as well.
 
@@ -42,7 +41,7 @@ For Maven, you add the following configuration block to `kotlin-maven-plugin`:
 
 ```xml
 <configuration>
-    <jvmTarget>1.8</jvmTarget>
+    <jvmTarget>17</jvmTarget>
 </configuration>
 ```
 
@@ -114,6 +113,33 @@ Configure your build environment to use snapshots if you want to try out the lat
 ```
 
 Snapshots are published every day at GMT 16:00 if there has been any changes.
+
+### Running the test suite
+
+The default invocation runs the whole suite on your workstation:
+
+```bash
+./mvnw test
+```
+
+The same suite also runs on machines with no display server (containers, CI runners)
+using the headless Monocle glass platform, which comes from the test-scoped
+`org.testfx:openjfx-monocle` dependency and is activated by a Maven profile:
+
+```bash
+./mvnw test -Pheadless
+```
+
+CI (`.github/workflows/ci.yml`) runs the default suite with `-Pheadless` as a
+blocking check on every push and pull request.
+
+Flaky or environment-dependent tests are quarantined: tagged `@Tag("quarantine")`
+they are excluded from every default run and run only on demand:
+
+```bash
+./mvnw test -Pquarantine                 # only quarantined tests
+./mvnw test -Pquarantine -Pheadless      # ... headless
+```
 
 ### What does it look like? (Code snippets)
 

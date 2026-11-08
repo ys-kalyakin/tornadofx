@@ -4,9 +4,9 @@ import javafx.event.EventTarget
 import javafx.scene.Node
 import javafx.scene.layout.Pane
 import javafx.stage.Stage
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.Test
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 import org.testfx.api.FxToolkit
 import tornadofx.*
 import kotlin.test.assertEquals
@@ -51,7 +51,7 @@ class ChildInterceptorTest {
 		val app = App(MyTestView::class)
 
 		@JvmStatic
-		@BeforeClass
+		@BeforeAll
 		fun before() {
 			val primaryStage: Stage = FxToolkit.registerPrimaryStage()
 			FX.registerApplication(FxToolkit.setupApplication {
@@ -60,7 +60,7 @@ class ChildInterceptorTest {
 		}
 
 		@JvmStatic
-		@AfterClass
+		@AfterAll
 		fun after() {
 			FxToolkit.cleanupApplication(app)
 		}

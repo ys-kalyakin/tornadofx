@@ -2,7 +2,7 @@
 
 package tornadofx
 
-import com.sun.javafx.scene.control.skin.TableRowSkin
+import javafx.scene.control.skin.TableRowSkin
 import javafx.application.Platform
 import javafx.beans.InvalidationListener
 import javafx.beans.Observable
@@ -699,9 +699,10 @@ fun <S, T> TableView<S>.column(title: String, valueProvider: (TableColumn.CellDa
  */
 @Suppress("UNCHECKED_CAST")
 infix fun <S> TableColumn<S, *>.value(cellValueFactory: (TableColumn.CellDataFeatures<S, Any>) -> Any?) = apply {
-    this.cellValueFactory = Callback {
-        val createdValue = cellValueFactory(it as TableColumn.CellDataFeatures<S, Any>)
-        (createdValue as? ObservableValue<Any>) ?: SimpleObjectProperty(createdValue)
+    // Kotlin 2 disallows assigning through the star-projected receiver's property
+    (this as TableColumn<S, Any>).cellValueFactory = Callback<TableColumn.CellDataFeatures<S, Any>, ObservableValue<Any>> {
+        val createdValue = cellValueFactory(it)
+        (createdValue as? ObservableValue<Any>) ?: SimpleObjectProperty<Any>(createdValue)
     }
 }
 
@@ -1121,7 +1122,9 @@ class DirtyDecoratingTableRowSkin<S>(tableRow: TableRow<S>, val editModel: Table
     override fun layoutChildren(x: Double, y: Double, w: Double, h: Double) {
         super.layoutChildren(x, y, w, h)
 
-        cells.forEach { cell ->
+        // TableRowSkinBase.cells is package-private since JavaFX 9; the cells are
+        // the TableCell children of this skin
+        children.filterIsInstance<TableCell<S, *>>().forEach { cell ->
             val item = if (cell.index > -1 && cell.tableView.items.size > cell.index) cell.tableView.items[cell.index] else null
             val polygon = getPolygon(cell)
             val isDirty = item != null && editModel.getDirtyState(item).isDirtyColumn(cell.tableColumn)

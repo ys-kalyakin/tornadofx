@@ -2,8 +2,8 @@ package tornadofx.tests
 
 import javafx.scene.input.DataFormat
 import javafx.stage.Stage
-import org.junit.Assert
-import org.junit.Test
+import org.junit.jupiter.api.Assertions as Assert
+import org.junit.jupiter.api.Test
 import org.testfx.api.FxToolkit
 import tornadofx.Controller
 import tornadofx.FX
@@ -30,7 +30,12 @@ class ClipboardTest {
                     }
 
                     Assert.assertEquals(string1, clipboard.string)
-                    Assert.assertEquals(42, clipboard.getContent(CustomDataFormat))
+                    // JavaFX 21 returns custom-format data as a serialized ByteBuffer
+                    val customData = clipboard.getContent(CustomDataFormat)
+                    val customValue = if (customData is java.nio.ByteBuffer)
+                        java.io.ObjectInputStream(java.io.ByteArrayInputStream(customData.array())).readObject()
+                    else customData
+                    Assert.assertEquals(42, customValue)
 
                     clipboard.putString(string2)
                     Assert.assertEquals(string2, clipboard.string)

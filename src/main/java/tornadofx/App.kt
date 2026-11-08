@@ -157,7 +157,9 @@ open class App(open val primaryView: KClass<out UIComponent> = NoPrimaryViewSpec
     @Suppress("UNCHECKED_CAST")
     private fun determinePrimaryView(): KClass<out UIComponent> {
         if (primaryView == NoPrimaryViewSpecified::class) {
-            val viewClassName = parameters.named?.get("view-class") ?: return NoPrimaryViewSpecified::class
+            // getParameters() is null when the App was not launched through
+            // Application.launch (JavaFX 21)
+            val viewClassName = parameters?.named?.get("view-class") ?: return NoPrimaryViewSpecified::class
             val viewClass = Class.forName(viewClassName)
 
             require(UIComponent::class.java.isAssignableFrom(viewClass)) { "Class specified by --class-name is not a subclass of tornadofx.View" }

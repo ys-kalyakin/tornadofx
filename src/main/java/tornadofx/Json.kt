@@ -411,7 +411,7 @@ fun InputStream.toJSONArray(): JsonArray = Json.createReader(this).use { it.read
 fun InputStream.toJSON(): JsonObject = Json.createReader(this).use { it.readObject() }
 
 fun JsonObject?.contains(text: String?, ignoreCase: Boolean = true) =
-        if (this == null || text == null) false else toString().toLowerCase().contains(text, ignoreCase)
+        if (this == null || text == null) false else toString().lowercase().contains(text, ignoreCase)
 
 fun JsonModel?.contains(text: String?, ignoreCase: Boolean = true) = this?.toJSON()?.contains(text, ignoreCase) ?: false
 

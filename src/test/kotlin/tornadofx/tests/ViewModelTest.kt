@@ -7,8 +7,8 @@ import javafx.scene.control.TableView
 import javafx.scene.control.TreeItem
 import javafx.scene.control.TreeView
 import javafx.stage.Stage
-import org.junit.Assert.*
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
 import org.testfx.api.FxToolkit
 import tornadofx.*
 
@@ -169,7 +169,9 @@ open class ViewModelTest {
         val person = Person("John", 37)
 
         val model = object : ViewModel() {
-            val name = bind { person.nameProperty() } as SimpleStringProperty
+            // Kotlin 2 infers ObjectProperty<String> for a producer returning
+            // nameProperty(); the facade follows that type now
+            val name = bind { person.nameProperty() }
         }
 
         model.name.value = "Jay"

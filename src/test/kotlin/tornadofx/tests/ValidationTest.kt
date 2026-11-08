@@ -1,7 +1,7 @@
 package tornadofx.tests
 
 import javafx.scene.control.TextField
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import org.testfx.api.FxToolkit
 import tornadofx.FX
 import tornadofx.ValidationContext

@@ -1,10 +1,8 @@
 package tornadofx.tests
 
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.testfx.api.FxRobot
 import org.testfx.api.FxToolkit
 import tornadofx.*
@@ -26,7 +24,7 @@ class MultipleLifecycleAsyncAppTest(val round: Int) {
 //    lateinit var robot: FxRobot
 //    lateinit var app: App
 //
-//    @Before
+//    @BeforeEach
 //    fun before() {
 //        FxToolkit.registerPrimaryStage()
 //        app = App(MultipleLifecycleAsyncView::class)
@@ -36,7 +34,7 @@ class MultipleLifecycleAsyncAppTest(val round: Int) {
 //        println("round: $round")
 //    }
 //
-//    @After
+//    @AfterEach
 //    fun after() {
 //        FxToolkit.cleanupStages()
 //        FxToolkit.cleanupApplication(app)

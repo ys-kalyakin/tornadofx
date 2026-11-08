@@ -14,8 +14,8 @@ import javafx.scene.shape.StrokeType
 import javafx.scene.text.Font
 import javafx.scene.text.FontWeight
 import javafx.stage.Stage
-import org.junit.Assert
-import org.junit.Test
+import org.junit.jupiter.api.Assertions as Assert
+import org.junit.jupiter.api.Test
 import org.testfx.api.FxToolkit
 import tornadofx.*
 import tornadofx.Stylesheet.Companion.armed
@@ -61,9 +61,9 @@ class StylesheetTest {
 
     val primaryStage: Stage = FxToolkit.registerPrimaryStage()
 
-    val renderedProp by cssproperty<String> { "${it.toUpperCase()}!!!" }
+    val renderedProp by cssproperty<String> { "${it.uppercase()}!!!" }
     val renderedBool by cssproperty<Bool> { it.name }
-    val renderedMulti by cssproperty<MultiValue<String>> { it.elements.joinToString { "${it.toUpperCase()}!!!" } }
+    val renderedMulti by cssproperty<MultiValue<String>> { it.elements.joinToString { "${it.uppercase()}!!!" } }
 
     enum class Bool { TRUE, FALSE, FILE_NOT_FOUND }
 

@@ -2,10 +2,6 @@
 
 package tornadofx
 
-import com.sun.javafx.scene.control.behavior.BehaviorBase
-import com.sun.javafx.scene.control.behavior.CellBehaviorBase
-import com.sun.javafx.scene.control.skin.CellSkinBase
-import com.sun.javafx.scene.control.skin.VirtualContainerBase
 import javafx.beans.InvalidationListener
 import javafx.beans.property.*
 import javafx.beans.value.ChangeListener
@@ -21,6 +17,9 @@ import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.control.SelectionMode.MULTIPLE
 import javafx.scene.control.SelectionMode.SINGLE
+import javafx.scene.control.skin.CellSkinBase
+import javafx.scene.control.skin.VirtualContainerBase
+import javafx.scene.control.skin.VirtualFlow
 import javafx.scene.input.*
 import javafx.scene.layout.HBox
 import javafx.scene.layout.StackPane
@@ -188,7 +187,7 @@ class DataGrid<T>(items: ObservableList<T>) : Control() {
     // Called when the items list changes structurally
     private val itemsChangeListener = InvalidationListener {
         selectionModel.clearSelectionAndReapply()
-        (skin as? DataGridSkin<T>)?.handleControlPropertyChanged("ITEMS")
+        (skin as? DataGridSkin<T>)?.refreshItems()
     }
 
     // Called when the items list is swapped for a new
@@ -202,7 +201,7 @@ class DataGrid<T>(items: ObservableList<T>) : Control() {
             graphicCache.clear()
         }
         newList.addListener(itemsChangeListener)
-        (skin as? DataGridSkin<T>)?.handleControlPropertyChanged("ITEMS")
+        (skin as? DataGridSkin<T>)?.refreshItems()
     }
 
     val selectedItem: T? get() = this.selectionModel.selectedItem
@@ -238,6 +237,24 @@ open class DataGridCell<T>(val dataGrid: DataGrid<T>) : IndexedCell<T>() {
 
     init {
         addClass(Stylesheet.datagridCell)
+
+        // Select cell on mouse press (replaces the JavaFX 8-era CellBehaviorBase usage)
+        addEventFilter(MouseEvent.MOUSE_PRESSED) { event ->
+            val idx = index
+            if (event.button == MouseButton.PRIMARY && idx != -1) {
+                val sm = dataGrid.selectionModel
+                when {
+                    event.isShiftDown && sm.selectionMode == MULTIPLE -> {
+                        val anchor = if (sm.selectedIndex == -1) idx else sm.selectedIndex
+                        (minOf(anchor, idx)..maxOf(anchor, idx)).forEach { sm.select(it) }
+                    }
+                    event.isShortcutDown && sm.selectionMode == MULTIPLE ->
+                        if (sm.isSelected(idx)) sm.clearSelection(idx) else sm.select(idx)
+                    else -> sm.clearAndSelect(idx)
+                }
+                dataGrid.focusModel.focus(idx)
+            }
+        }
 
         // Update cell content when index changes
         indexProperty().onChange {
@@ -330,27 +347,7 @@ abstract class DataGridCellFragment<T> : ItemFragment<T>() {
     }
 }
 
-class DataGridCellBehavior<T>(control: DataGridCell<T>) : CellBehaviorBase<DataGridCell<T>>(control, emptyList()) {
-    override fun getFocusModel() = control.dataGrid.focusModel
-
-    override fun getCellContainer() = control
-
-    override fun edit(cell: DataGridCell<T>?) {
-        // No editing support for now
-    }
-
-    override fun getSelectionModel() = control.dataGrid.selectionModel
-
-    override fun doSelect(x: Double, y: Double, button: MouseButton?, clickCount: Int, shiftDown: Boolean, shortcutDown: Boolean) {
-        // I don't understand what the anchor is for yet, so to keep `focusedIndex = getAnchor(cellContainer, fm.getFocusedIndex())`
-        // from returning something else than the currently focused index, I make sure "isDefaultAnchor" is set to true.
-        // Must understand anchor and revisit this
-        control.properties["isDefaultAnchor"] = true
-        super.doSelect(x, y, button, clickCount, shiftDown, shortcutDown)
-    }
-}
-
-class DataGridCellSkin<T>(control: DataGridCell<T>) : CellSkinBase<DataGridCell<T>, DataGridCellBehavior<T>>(control, DataGridCellBehavior(control))
+class DataGridCellSkin<T>(control: DataGridCell<T>) : CellSkinBase<DataGridCell<T>>(control)
 
 class DataGridFocusModel<T>(val dataGrid: DataGrid<T>) : FocusModel<T>() {
     override fun getModelItem(index: Int) = if (index in 0 until itemCount) dataGrid.items[index] else null
@@ -369,7 +366,7 @@ open class DataGridRow<T>(val dataGrid: DataGrid<T>, val dataGridSkin: DataGridS
     override fun createDefaultSkin() = DataGridRowSkin(this)
 }
 
-class DataGridRowSkin<T>(control: DataGridRow<T>) : CellSkinBase<DataGridRow<T>, BehaviorBase<DataGridRow<T>>>(control, BehaviorBase(control, emptyList())) {
+class DataGridRowSkin<T>(control: DataGridRow<T>) : CellSkinBase<DataGridRow<T>>(control) {
     private var lastUpdatedCells = -1..-1
 
     init {
@@ -378,19 +375,9 @@ class DataGridRowSkin<T>(control: DataGridRow<T>) : CellSkinBase<DataGridRow<T>,
 
         updateCells()
 
-        registerChangeListener(skinnable.indexProperty(), "INDEX")
-        registerChangeListener(skinnable.widthProperty(), "WIDTH")
-        registerChangeListener(skinnable.heightProperty(), "HEIGHT")
-    }
-
-    override fun handleControlPropertyChanged(p: String) {
-        super.handleControlPropertyChanged(p)
-
-        when (p) {
-            "INDEX" -> updateCells()
-            "WIDTH" -> updateCells()
-            "HEIGHT" -> updateCells()
-        }
+        registerChangeListener(skinnable.indexProperty()) { updateCells() }
+        registerChangeListener(skinnable.widthProperty()) { updateCells() }
+        registerChangeListener(skinnable.heightProperty()) { updateCells() }
     }
 
     /**
@@ -401,7 +388,9 @@ class DataGridRowSkin<T>(control: DataGridRow<T>) : CellSkinBase<DataGridRow<T>,
 
         if (rowIndex > -1) {
             val dataGrid = skinnable.dataGrid
-            val maxCellsInRow = (dataGrid.skin as DataGridSkin<*>).computeMaxCellsInRow()
+            // The owning DataGrid.skin property is not set until its own skin
+            // constructor returns, so reach the skin through the row instead
+            val maxCellsInRow = skinnable.dataGridSkin.computeMaxCellsInRow()
             val totalCellsInGrid = dataGrid.items.size
             val startCellIndex = rowIndex * maxCellsInRow
             val endCellIndex = startCellIndex + maxCellsInRow - 1
@@ -446,7 +435,7 @@ class DataGridRowSkin<T>(control: DataGridRow<T>) : CellSkinBase<DataGridRow<T>,
 
     override fun computeMaxHeight(width: Double, topInset: Double, rightInset: Double, bottomInset: Double, leftInset: Double): Double {
         val dataGrid = skinnable.dataGrid
-        return dataGrid.cellHeight * (dataGrid.skin as DataGridSkin<*>).itemCount
+        return dataGrid.cellHeight * skinnable.dataGridSkin.visibleRowCount()
     }
 
     override fun computePrefHeight(width: Double, topInset: Double, rightInset: Double, bottomInset: Double, leftInset: Double): Double {
@@ -627,34 +616,58 @@ class DataGridSelectionModel<T>(val dataGrid: DataGrid<T>) : MultipleSelectionMo
 }
 
 @Suppress("UNCHECKED_CAST")
-class DataGridSkin<T>(control: DataGrid<T>) : VirtualContainerBase<DataGrid<T>, BehaviorBase<DataGrid<T>>, DataGridRow<T>>(control, BehaviorBase(control, emptyList())) {
+class DataGridSkin<T>(control: DataGrid<T>) : VirtualContainerBase<DataGrid<T>, DataGridRow<T>>(control) {
     private val gridViewItemsListener = ListChangeListener<T> {
-        updateRowCount()
+        updateItemCount()
         skinnable.requestLayout()
     }
 
     private val weakGridViewItemsListener = WeakListChangeListener(gridViewItemsListener)
 
-    init {
-        updateItems()
+    private var flowRef: DataGridFlow<DataGridRow<T>>? = null
+    private val flow: DataGridFlow<DataGridRow<T>> get() = flowRef!!
 
+    /**
+     * Exposes the JavaFX 9+ protected VirtualFlow cell-lifecycle methods
+     * (recreate/rebuild/reconfigure) to the skin.
+     */
+    class DataGridFlow<I : IndexedCell<*>> : VirtualFlow<I>() {
+        public override fun recreateCells() = super.recreateCells()
+        public override fun rebuildCells() = super.rebuildCells()
+        public override fun reconfigureCells() = super.reconfigureCells()
+    }
+
+    override fun createVirtualFlow(): VirtualFlow<DataGridRow<T>> = DataGridFlow<DataGridRow<T>>().also { flowRef = it }
+
+    init {
+        // Configure the flow before the first cell count is set; JavaFX 21's
+        // VirtualFlow lays out cells eagerly when cellCount changes
         flow.id = "virtual-flow"
         flow.isPannable = false
         flow.isFocusTraversable = false
-        flow.setCreateCell { createCell() }
+        flow.setCellFactory { createCell() }
         children.add(flow)
 
-        updateRowCount()
+        updateItems()
 
-        registerChangeListener(control.itemsProperty, "ITEMS")
-        registerChangeListener(control.cellFactoryProperty, "CELL_FACTORY")
-        registerChangeListener(control.parentProperty(), "PARENT")
-        registerChangeListener(control.cellHeightProperty as ObservableValue<Number>, "CELL_HEIGHT")
-        registerChangeListener(control.cellWidthProperty as ObservableValue<Number>, "CELL_WIDTH")
-        registerChangeListener(control.horizontalCellSpacingProperty as ObservableValue<Number>, "HORIZONZAL_CELL_SPACING")
-        registerChangeListener(control.verticalCellSpacingProperty as ObservableValue<Number>, "VERTICAL_CELL_SPACING")
-        registerChangeListener(control.widthProperty(), "WIDTH_PROPERTY")
-        registerChangeListener(control.heightProperty(), "HEIGHT_PROPERTY")
+        registerChangeListener(control.itemsProperty) { updateItems() }
+        registerChangeListener(control.cellFactoryProperty) { flow.recreateCells() }
+        registerChangeListener(control.parentProperty()) {
+            if (skinnable.parent != null && skinnable.isVisible)
+                skinnable.requestLayout()
+        }
+        registerChangeListener(control.cellHeightProperty as ObservableValue<Number>) { flow.recreateCells() }
+        registerChangeListener(control.cellWidthProperty as ObservableValue<Number>) {
+            updateItemCount()
+            flow.recreateCells()
+        }
+        registerChangeListener(control.horizontalCellSpacingProperty as ObservableValue<Number>) {
+            updateItemCount()
+            flow.recreateCells()
+        }
+        registerChangeListener(control.verticalCellSpacingProperty as ObservableValue<Number>) { flow.recreateCells() }
+        registerChangeListener(control.widthProperty()) { updateItemCount() }
+        registerChangeListener(control.heightProperty()) { updateItemCount() }
 
         focusOnClick()
     }
@@ -665,31 +678,7 @@ class DataGridSkin<T>(control: DataGrid<T>) : VirtualContainerBase<DataGrid<T>, 
         }
     }
 
-
-    override public fun handleControlPropertyChanged(p: String?) {
-        super.handleControlPropertyChanged(p)
-
-        when (p) {
-            "ITEMS" -> updateItems()
-            "CELL_FACTORY" -> flow.recreateCells()
-            "CELL_HEIGHT" -> flow.recreateCells()
-            "CELL_WIDTH" -> {
-                updateRowCount()
-                flow.recreateCells()
-            }
-            "HORIZONZAL_CELL_SPACING" -> {
-                updateRowCount()
-                flow.recreateCells()
-            }
-            "VERTICAL_CELL_SPACING" -> flow.recreateCells()
-            "PARENT" -> {
-                if (skinnable.parent != null && skinnable.isVisible)
-                    skinnable.requestLayout()
-            }
-            "WIDTH_PROPERTY" -> updateRowCount()
-            "HEIGHT_PROPERTY" -> updateRowCount()
-        }
-    }
+    internal fun refreshItems() = updateItems()
 
     override fun getItemCount() = Math.ceil(skinnable.items.size.toDouble() / computeMaxCellsInRow()).toInt()
 
@@ -703,6 +692,8 @@ class DataGridSkin<T>(control: DataGrid<T>) : VirtualContainerBase<DataGrid<T>, 
         return if (neededRows > skinnable.maxRows) (skinnable.items.size.toDouble() / skinnable.maxRows).toInt() else maxCellsInRow
     }
 
+    fun visibleRowCount() = itemCount
+
     fun computeRowWidth() = skinnable.width - 14 // Account for scrollbar
 
     private fun computeCellWidth() = skinnable.cellWidth + skinnable.horizontalCellSpacing * 2
@@ -711,8 +702,8 @@ class DataGridSkin<T>(control: DataGrid<T>) : VirtualContainerBase<DataGrid<T>, 
 
     override fun computePrefWidth(height: Double, topInset: Double, rightInset: Double, bottomInset: Double, leftInset: Double) = 500.0
 
-    override fun updateRowCount() {
-        if (flow == null) return
+    override fun updateItemCount() {
+        if (flowRef == null) return
 
         val oldCount = flow.cellCount
         val newCount = itemCount
@@ -726,12 +717,12 @@ class DataGridSkin<T>(control: DataGrid<T>) : VirtualContainerBase<DataGrid<T>, 
         updateRows(newCount)
     }
 
-    override fun createCell() = DataGridRow(skinnable, this)
+    fun createCell() = DataGridRow(skinnable, this)
 
     private fun updateItems() {
         skinnable.items.removeListener(weakGridViewItemsListener)
         skinnable.items.addListener(weakGridViewItemsListener)
-        updateRowCount()
+        updateItemCount()
         flow.recreateCells()
         skinnable.requestLayout()
     }

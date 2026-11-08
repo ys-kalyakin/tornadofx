@@ -1,7 +1,5 @@
 package tornadofx
 
-import com.sun.javafx.scene.control.behavior.BehaviorBase
-import com.sun.javafx.scene.control.skin.BehaviorSkinBase
 import javafx.beans.property.BooleanProperty
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.collections.FXCollections
@@ -9,6 +7,7 @@ import javafx.event.EventTarget
 import javafx.scene.Node
 import javafx.scene.control.Button
 import javafx.scene.control.Control
+import javafx.scene.control.SkinBase
 import javafx.scene.control.TitledPane
 
 class SqueezeBox(multiselect: Boolean = true, fillHeight: Boolean = false) : Control() {
@@ -54,18 +53,13 @@ class SqueezeBox(multiselect: Boolean = true, fillHeight: Boolean = false) : Con
     }
 }
 
-class SqueezeBoxSkin(val control: SqueezeBox) : BehaviorSkinBase<SqueezeBox, SqueezeBoxBehavior>(control, SqueezeBoxBehavior(control)) {
-    init {
-        registerChangeListener(skinnable.widthProperty(), "WIDTH")
-        registerChangeListener(skinnable.heightProperty(), "HEIGHT")
-    }
-
+class SqueezeBoxSkin(val control: SqueezeBox) : SkinBase<SqueezeBox>(control) {
     override fun computeMinHeight(width: Double, topInset: Double, rightInset: Double, bottomInset: Double, leftInset: Double): Double {
-        return children.sumByDouble { it.minHeight(width) } + topInset + bottomInset
+        return children.sumOf { it.minHeight(width) } + topInset + bottomInset
     }
 
     override fun computePrefHeight(width: Double, topInset: Double, rightInset: Double, bottomInset: Double, leftInset: Double): Double {
-        return children.sumByDouble { it.prefHeight(width) } + topInset + bottomInset
+        return children.sumOf { it.prefHeight(width) } + topInset + bottomInset
     }
 
     override fun computeMinWidth(height: Double, topInset: Double, rightInset: Double, bottomInset: Double, leftInset: Double): Double {
@@ -114,10 +108,6 @@ class SqueezeBoxSkin(val control: SqueezeBox) : BehaviorSkinBase<SqueezeBox, Squ
             closeButton.resizeRelocate(contentWidth - 20, contentY + 4, 16.0, 16.0)
         }
     }
-
-    override fun handleControlPropertyChanged(propertyReference: String?) {
-        super.handleControlPropertyChanged(propertyReference)
-    }
 }
 
 fun EventTarget.squeezebox(multiselect: Boolean = true, fillHeight: Boolean = true, op: SqueezeBox.() -> Unit) = SqueezeBox(multiselect, fillHeight).attachTo(this, op)
@@ -132,8 +122,6 @@ fun SqueezeBox.fold(title: String? = null, expanded: Boolean = false, icon: Node
     op.invoke(fold)
     return fold
 }
-
-class SqueezeBoxBehavior(control: SqueezeBox) : BehaviorBase<SqueezeBox>(control, mutableListOf())
 
 class SqueezeBoxStyles : Stylesheet() {
     companion object {

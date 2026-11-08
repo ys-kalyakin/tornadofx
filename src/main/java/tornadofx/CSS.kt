@@ -22,7 +22,7 @@ import javafx.scene.shape.StrokeLineCap
 import javafx.scene.shape.StrokeLineJoin
 import javafx.scene.shape.StrokeType
 import javafx.scene.text.*
-import sun.net.www.protocol.css.Handler
+import tornadofx.css.Handler
 import java.lang.invoke.MethodHandles
 import java.net.MalformedURLException
 import java.net.URI
@@ -444,9 +444,7 @@ open class Stylesheet(vararg val imports: KClass<out Stylesheet>) : SelectionHol
         val visited by csspseudoclass()
 
         init {
-            if (!FX.osgiAvailable) {
-                detectAndInstallUrlHandler()
-            }
+            detectAndInstallUrlHandler()
         }
 
         fun importServiceLoadedStylesheets() {
@@ -455,14 +453,10 @@ open class Stylesheet(vararg val imports: KClass<out Stylesheet>) : SelectionHol
         }
 
         /**
-         * Try to retrieve a type safe stylesheet, and force installation of url handler
-         * if it's missing. This typically happens in environments with atypical class loaders.
-         *
-         * Under normal circumstances, the CSS handler that comes with TornadoFX should be picked
-         * up by the JVM automatically.
-         *
-         * If an OSGi environment is detected, the TornadoFX OSGi Activator will install the OSGi
-         * compatible URL handler instead.
+         * Try to retrieve a type safe stylesheet, and install the css:// url handler
+         * if it's missing. The handler lives in the tornadofx.css package, so it is
+         * never picked up automatically by the JVM (that only applied to the old
+         * sun.net.www.protocol.css package on Java 8) and must be registered here.
          */
         private fun detectAndInstallUrlHandler() {
             try {
@@ -509,7 +503,7 @@ open class PropertyHolder {
             is MultiValue<*> -> value.elements.joinToString { toCss(it) }
             is CssBox<*> -> "${toCss(value.top)} ${toCss(value.right)} ${toCss(value.bottom)} ${toCss(value.left)}"
             is FontWeight -> "${value.weight}"  // Needs to come before `is Enum<*>`
-            is Enum<*> -> value.toString().toLowerCase().replace("_", "-")
+            is Enum<*> -> value.toString().lowercase().replace("_", "-")
             is Font -> "${if (value.style == "Regular") "normal" else value.style} ${value.size}pt ${toCss(value.family)}"
             is Cursor -> if (value is ImageCursor) {
                 value.image.javaClass.getDeclaredField("url").let {
@@ -1241,7 +1235,7 @@ val fiveDigits = DecimalFormat("#.#####", DecimalFormatSymbols.getInstance(Local
 
 val Color.css: String get() = "rgba(${(red * 255).toInt()}, ${(green * 255).toInt()}, ${(blue * 255).toInt()}, ${fiveDigits.format(opacity)})"
 
-internal fun String.camelToSnake() = (get(0).toLowerCase() + substring(1)).replace(CssRule.upperCaseRegex, "-$1").toLowerCase()
+internal fun String.camelToSnake() = (get(0).lowercaseChar() + substring(1)).replace(CssRule.upperCaseRegex, "-$1").lowercase()
 internal fun String.cssValidate() = if (matches(CssRule.nameRegex)) this else throw IllegalArgumentException("Invalid CSS Name: $this")
 internal fun String.toSelector() = CssSelector(*split(CssRule.splitter).map(String::toRuleSet).toTypedArray())
 internal fun String.toRuleSet() = if (matches(CssRule.ruleSetRegex)) {

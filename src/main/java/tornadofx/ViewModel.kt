@@ -63,7 +63,7 @@ open class ViewModel : Component(), ScopedInstance {
                 if (it.wasAdded()) {
                     it.addedSubList.forEach { facade ->
                         facade.addListener { obs, _, nv ->
-                            if (validate(fields = *arrayOf(facade))) propertyMap[obs]!!.invoke()?.value = nv
+                            if (validate(fields = *arrayOf(facade))) propertyMap[obs]!!.invoke()?.setValueUnchecked(nv)
                         }
                     }
                 }
@@ -121,6 +121,7 @@ open class ViewModel : Component(), ScopedInstance {
                 Set::class.java.isAssignableFrom(propertyType) -> BindingAwareSimpleSetProperty<T>(this, prop?.name)
                 Map::class.java.isAssignableFrom(propertyType) -> BindingAwareSimpleMapProperty<Any, Any>(this, prop?.name)
                 ObservableMap::class.java.isAssignableFrom(propertyType) -> BindingAwareSimpleMapProperty<Any, Any>(this, prop?.name)
+                ObjectProperty::class.java.isAssignableFrom(propertyType) -> BindingAwareSimpleObjectProperty<T>(this, prop?.name)
 
             // Match against the type of the Property
                 java.lang.Integer::class.java.isAssignableFrom(typeParam) -> BindingAwareSimpleIntegerProperty(this, prop?.name)
@@ -238,7 +239,7 @@ open class ViewModel : Component(), ScopedInstance {
                     if (prop != null) {
                         val event = Commit(facade, prop.value, facade.value)
                         commits.add(event)
-                        prop.value = facade.value
+                        prop.setValueUnchecked(facade.value)
                     }
                 }
                 dirtyProperties.removeAll(commitThese)
@@ -285,16 +286,16 @@ open class ViewModel : Component(), ScopedInstance {
     }
 
     fun assignValue(facade: Property<*>, prop: Property<*>?, defaultValue: Any? = null) {
-        facade.value = prop?.value ?: defaultValue
+        facade.setValueUnchecked(prop?.value ?: defaultValue)
 
         // Never allow null collection values
         if (facade.value == null) {
             when (facade) {
-                is ListProperty<*> -> facade.value = FXCollections.observableArrayList()
-                is SetProperty<*> -> facade.value = FXCollections.observableSet()
-                is MapProperty<*, *> -> facade.value = FXCollections.observableHashMap()
-                is MutableList<*> -> facade.value = ArrayList<Any>()
-                is MutableMap<*, *> -> facade.value = HashMap<Any, Any>()
+                is ListProperty<*> -> facade.setValueUnchecked(FXCollections.observableArrayList<Any>())
+                is SetProperty<*> -> facade.setValueUnchecked(FXCollections.observableSet<Any>())
+                is MapProperty<*, *> -> facade.setValueUnchecked(FXCollections.observableHashMap<Any, Any>())
+                is MutableList<*> -> facade.setValueUnchecked(ArrayList<Any>())
+                is MutableMap<*, *> -> facade.setValueUnchecked(HashMap<Any, Any>())
             }
         }
     }
@@ -583,3 +584,12 @@ class Commit(val property: ObservableValue<*>, val oldValue: Any?, val newValue:
  * Mark this ViewModel facade property as dirty in it's owning ViewModel.
  */
 fun Property<*>.markDirty() = viewModel?.markDirty(this)
+
+/**
+ * Sets a star-projected property value. Kotlin 2 forbids assigning through
+ * `Property<*>`'s setter directly, so callers route through this helper.
+ */
+@Suppress("UNCHECKED_CAST")
+internal fun Property<*>.setValueUnchecked(newValue: Any?) {
+    (this as Property<Any?>).value = newValue
+}

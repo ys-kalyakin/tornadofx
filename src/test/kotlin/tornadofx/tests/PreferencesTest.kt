@@ -1,7 +1,7 @@
 package tornadofx.tests
 
-import org.junit.Assert
-import org.junit.Test
+import org.junit.jupiter.api.Assertions as Assert
+import org.junit.jupiter.api.Test
 import tornadofx.Controller
 
 class PreferencesTest {

@@ -232,7 +232,7 @@ class Field(text: String? = null, orientation: Orientation = HORIZONTAL, forceLa
 
     init {
         inputContainer.addClass(Stylesheet.inputContainer)
-        inputContainer.addPseudoClass(orientation.name.toLowerCase())
+        inputContainer.addPseudoClass(orientation.name.lowercase())
         children.add(inputContainer)
 
         // Register/deregister with parent Fieldset
