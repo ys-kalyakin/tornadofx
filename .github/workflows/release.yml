@@ -89,7 +89,9 @@ jobs:
           CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
 
       - name: Publish the release to Maven Central
-        run: ./mvnw -B -ntp deploy
+        # The deploy lifecycle re-runs the test suite; run it headless
+        # (Monocle) like the gate, or JavaFX startup hangs on the runner.
+        run: ./mvnw -B -ntp deploy -Pheadless
 
       - name: Create the GitHub release
         env:

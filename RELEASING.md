@@ -86,8 +86,11 @@ Then run the gate and the deploy:
 
 ```bash
 ./mvnw -B test -Pheadless
-./mvnw -B deploy
+./mvnw -B -Pheadless deploy
 ```
+
+`deploy` re-runs the test suite as part of the lifecycle — keep `-Pheadless`
+on monitorless machines (the same Monocle profile the CI gate uses).
 
 `deploy` of a `-SNAPSHOT` version fails fast by design — the Central Portal
 does not accept snapshots. Use `./mvnw install` for local development; this
