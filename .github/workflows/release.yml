@@ -26,6 +26,7 @@ jobs:
   release:
     name: Test, sign, publish to Maven Central
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     env:
       # maven-gpg-plugin reads the signing passphrase from this variable.
       MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
@@ -38,6 +39,12 @@ jobs:
           distribution: corretto
           java-version: '21'
           cache: maven
+          # Writes a `central` server entry into settings.xml whose values are
+          # the env vars named below; Maven resolves them when deploy runs, so
+          # the CENTRAL_* env must be set on the publish step.
+          server-id: central
+          server-username: CENTRAL_USERNAME
+          server-password: CENTRAL_PASSWORD
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-passphrase: GPG_PASSPHRASE
 
@@ -70,29 +77,16 @@ jobs:
       - name: Run the headless test suite (release gate)
         run: ./mvnw -B test -Pheadless
 
-      - name: Configure the Central Portal credentials
-        run: |
-          mkdir -p "$HOME/.m2"
-          cat > "$HOME/.m2/settings.xml" <<SETTINGS
-          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
-            <servers>
-              <server>
-                <id>central</id>
-                <username>${CENTRAL_USERNAME}</username>
-                <password>${CENTRAL_PASSWORD}</password>
-              </server>
-            </servers>
-          </settings>
-          SETTINGS
-        env:
-          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
-          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
-
       - name: Publish the release to Maven Central
         # The deploy lifecycle re-runs the test suite; run it headless
         # (Monocle) like the gate, or JavaFX startup hangs on the runner.
         # Signing is bound to the verify phase and skipped by default
         # (gpg.skip=true in the POM), so re-enable it for the release.
+        # The CENTRAL_* env vars fill the settings.xml server entry that
+        # setup-java wrote (server-id: central).
+        env:
+          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
         run: ./mvnw -B -ntp deploy -Pheadless -Dgpg.skip=false
 
       - name: Create the GitHub release
