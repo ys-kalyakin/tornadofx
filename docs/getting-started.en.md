@@ -15,14 +15,14 @@ To *build the framework itself* from source, use a JDK 21 toolchain
 
 ## Maven
 
-Add the framework dependency (current fork line: `1.7.21-SNAPSHOT`, last
-upstream stable release: `1.7.20`):
+Add the framework dependency (current release: `2.0.0`, published to Maven
+Central under the fork's `io.github.ys-kalyakin` namespace):
 
 ```xml
 <dependency>
-    <groupId>no.tornado</groupId>
+    <groupId>io.github.ys-kalyakin</groupId>
     <artifactId>tornadofx</artifactId>
-    <version>1.7.21-SNAPSHOT</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
@@ -50,7 +50,7 @@ inline framework calls:
 
 ```groovy
 dependencies {
-    implementation 'no.tornado:tornadofx:1.7.21-SNAPSHOT'
+    implementation 'io.github.ys-kalyakin:tornadofx:2.0.0'
     implementation 'org.openjfx:javafx-controls:21:linux'
 }
 

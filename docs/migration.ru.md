@@ -5,6 +5,17 @@
 следует оставаться на 1.7.20. Каждое breaking change ниже зеркалит
 [журнал изменений проекта](https://github.com/ys-kalyakin/tornadofx/blob/master/CHANGELOG.md).
 
+## Новые координаты Maven (2.0.0)
+
+- Форк публикуется как **`io.github.ys-kalyakin:tornadofx`** (первый релиз:
+  `2.0.0`) вместо `no.tornado:tornadofx`. artifactId и все имена пакетов
+  (`tornadofx.*`) не меняются — меняются только Maven-координаты.
+- Обновите объявление зависимости: `<groupId>io.github.ys-kalyakin</groupId>`
+  в Maven, `io.github.ys-kalyakin:tornadofx:2.0.0` в Gradle
+  (см. [Начало работы](getting-started.md#maven)).
+- Старые релизы 1.7.x остаются в Maven Central под `no.tornado:tornadofx`;
+  форк не публикует версий под старыми координатами.
+
 ## Базовая платформа
 
 - Фреймворк собирается тулчейном **JDK 21**, компилируется против

@@ -3,7 +3,7 @@
 
 JavaFX Framework for Kotlin
 
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/no.tornado/tornadofx/badge.svg?cachebust)](https://search.maven.org/#search|ga|1|no.tornado.tornadofx)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.ys-kalyakin/tornadofx)](https://central.sonatype.com/artifact/io.github.ys-kalyakin/tornadofx)
 [![Apache License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
 ## Supported stack
@@ -66,16 +66,8 @@ You also need a full rebuild of your code after a version upgrade. If you run in
 - [Stack Overflow](http://stackoverflow.com/questions/ask?tags=tornadofx)
 - [IntelliJ IDEA Plugin](https://github.com/edvin/tornadofx-idea-plugin) 
 - [Example Application](https://github.com/edvin/tornadofx-samples) 
-- [Maven QuickStart Archetype](https://github.com/edvin/tornadofx-quickstart-archetype) 
+- [Maven QuickStart Archetype](https://github.com/edvin/tornadofx-quickstart-archetype) — upstream resource; it scaffolds projects with the old `no.tornado` coordinates, not this fork
 - [Legacy 1.7.x wiki](https://github.com/edvin/tornadofx/wiki) — documentation for the upstream 1.7.x line
-
-### Generate a quickstart application with Maven
-
-```bash
-mvn archetype:generate -DarchetypeGroupId=no.tornado \
-  -DarchetypeArtifactId=tornadofx-quickstart-archetype \
-  -DarchetypeVersion=1.7.20
-```
 
 ### Add TornadoFX to your project
 
@@ -83,16 +75,16 @@ mvn archetype:generate -DarchetypeGroupId=no.tornado \
 
 ```xml
 <dependency>
-    <groupId>no.tornado</groupId>
+    <groupId>io.github.ys-kalyakin</groupId>
     <artifactId>tornadofx</artifactId>
-    <version>1.7.20</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```groovy
-implementation 'no.tornado:tornadofx:1.7.20'
+implementation 'io.github.ys-kalyakin:tornadofx:2.0.0'
 ```
 
 ### Snapshots
