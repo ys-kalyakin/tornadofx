@@ -307,17 +307,28 @@ inline fun <T> MutableList<T>.moveDown(crossinline predicate: (T) -> Boolean) = 
 
 /**
  * Moves all **T** elements up an index that satisfy the given **predicate**, unless they are already at the top
+ *
+ * The matching indices are snapshotted before the first move, so the list is never
+ * iterated while being modified (and never throws ConcurrentModificationException).
  */
 inline fun <T> MutableList<T>.moveUpAll(crossinline predicate: (T) -> Boolean) = asSequence().withIndex()
         .filter { predicate.invoke(it.value) }
-        .forEach { moveUpAt(it.index) }
+        .map { it.index }
+        .toList()
+        .forEach { moveUpAt(it) }
 
 /**
  * Moves all **T** elements down an index that satisfy the given **predicate**, unless they are already at the bottom
+ *
+ * Matching indices are snapshotted and processed bottom-up: a downward move shifts
+ * every index above it, so lower matches must be moved last to stay valid.
  */
 inline fun <T> MutableList<T>.moveDownAll(crossinline predicate: (T) -> Boolean) = asSequence().withIndex()
         .filter { predicate.invoke(it.value) }
-        .forEach { moveDownAt(it.index) }
+        .map { it.index }
+        .toList()
+        .asReversed()
+        .forEach { moveDownAt(it) }
 
 
 fun <T> MutableList<T>.moveToTopWhere(predicate: (T) -> Boolean) {

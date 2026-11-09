@@ -77,6 +77,10 @@ class EventBus {
     private val subscriptions = ConcurrentHashMap<KClass<out FXEvent>, Set<InvalidatableEventRegistration>>()
     private val eventScopes = ConcurrentHashMap<EventContext.(FXEvent) -> Unit, Scope>()
 
+    // Test-only introspection for the no-leak guarantees (upstream #1009)
+    internal val scopeRegistrySize: Int get() = eventScopes.size
+    internal fun subscriptionCount(event: KClass<out FXEvent>): Int = subscriptions[event]?.size ?: 0
+
     inline fun <reified T : FXEvent> subscribe(scope: Scope, registration: FXEventRegistration) = subscribe(T::class, scope, registration)
     fun <T : FXEvent> subscribe(event: KClass<T>, scope: Scope, registration: FXEventRegistration) {
         subscriptions.compute(event) { _, set ->
@@ -104,7 +108,10 @@ class EventBus {
                 it.valid = false
             }
         }
-        eventScopes.remove(action)
+        // Drop the invalidated registrations right away (they hold their owner
+        // alive) and remove scope bookkeeping that is no longer backed by a
+        // valid registration (upstream #1009).
+        cleanupInvalidRegistrations(event)
     }
 
     fun unsubscribe(registration: EventRegistration) {
@@ -112,8 +119,23 @@ class EventBus {
         registration.owner?.subscribedEvents?.computeIfPresent(registration.eventType) {_, list -> list.filter { it != registration }}
     }
 
-    private fun cleanupInvalidRegistrations(eventKlass: KClass<FXEvent>) {
-        subscriptions.computeIfPresent(eventKlass) { _, set -> set.filter { it.valid }.toSet() }
+    private fun cleanupInvalidRegistrations(eventKlass: KClass<out FXEvent>) {
+        subscriptions.computeIfPresent(eventKlass) { _, set ->
+            val (valid, invalid) = set.partition { it.valid }
+            invalid.forEach { removeScopeIfOrphaned(it.action) }
+            valid.toSet()
+        }
+    }
+
+    /**
+     * Removes the scope entry for the given action unless a valid registration
+     * for it still exists in some other event type's subscription set.
+     */
+    private fun removeScopeIfOrphaned(action: EventContext.(FXEvent) -> Unit) {
+        val hasValidRegistration = subscriptions.values.any { registrations ->
+            registrations.any { it.valid && it.action == action }
+        }
+        if (!hasValidRegistration) eventScopes.remove(action)
     }
 
     fun fire(event: FXEvent) {
