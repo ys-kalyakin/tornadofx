@@ -131,7 +131,7 @@ class DataGrid<T>(items: ObservableList<T>) : Control() {
 
     val cellFragmentProperty by lazy { SimpleObjectProperty<KClass<DataGridCellFragment<T>>>() }
     var cellFragment by cellFragmentProperty
-    fun cellFragment(fragment: KClass<DataGridCellFragment<T>>) {
+    fun cellFragment(fragment: KClass<out DataGridCellFragment<T>>) {
         properties["tornadofx.cellFragment"] = fragment
     }
     inline fun <reified C : DataGridCellFragment<T>> cellFragment() {
@@ -292,8 +292,11 @@ open class DataGridCell<T>(val dataGrid: DataGrid<T>) : IndexedCell<T>() {
         } else {
             val formatter = dataGrid.cellFormat
             if (fresh) {
-                val cellFragmentType = dataGrid.properties["tornadofx.cellFragment"] as KClass<DataGridCellFragment<T>>?
-                cellFragment = if (cellFragmentType != null) find(cellFragmentType, dataGrid.scope ?: FX.defaultScope) else null
+                @Suppress("UNCHECKED_CAST")
+                val fragment: DataGridCellFragment<T>? = (dataGrid.properties["tornadofx.cellFragment"] as KClass<out DataGridCellFragment<T>>?)?.let {
+                    find(it as KClass<DataGridCellFragment<T>>, dataGrid.scope ?: FX.defaultScope)
+                }
+                cellFragment = fragment
                 fresh = false
             }
             cellFragment?.apply {

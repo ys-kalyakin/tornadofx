@@ -169,4 +169,124 @@ class CollectionsTest {
         assertFalse(result)
         assertEquals(listOf(0, 1, 2, 3, 4), list)
     }
+
+    @Test
+    fun testMoveUpAllMovesMatchesUpOnPlainList() {
+        val list = mutableListOf(1, 2, 3, 4)
+
+        list.moveUpAll { it == 2 || it == 3 }
+
+        assertEquals(listOf(2, 3, 1, 4), list)
+    }
+
+    @Test
+    fun testMoveUpAllMovesMatchesUpOnObservableList() {
+        val list = javafx.collections.FXCollections.observableArrayList(1, 2, 3, 4)
+
+        list.moveUpAll { it == 2 || it == 3 }
+
+        assertEquals(listOf(2, 3, 1, 4), list)
+    }
+
+    @Test
+    fun testMoveDownAllMovesMatchesDownOnPlainList() {
+        val list = mutableListOf(1, 2, 3, 4)
+
+        list.moveDownAll { it == 1 || it == 2 }
+
+        assertEquals(listOf(3, 1, 2, 4), list)
+    }
+
+    @Test
+    fun testMoveDownAllMovesMatchesDownOnObservableList() {
+        val list = javafx.collections.FXCollections.observableArrayList(1, 2, 3, 4)
+
+        list.moveDownAll { it == 1 || it == 2 }
+
+        assertEquals(listOf(3, 1, 2, 4), list)
+    }
+
+    @Test
+    fun testMoveUpAllKeepsTopElementAtTop() {
+        val list = mutableListOf(1, 2, 3)
+
+        list.moveUpAll { it == 1 }
+
+        assertEquals(listOf(1, 2, 3), list)
+    }
+
+    @Test
+    fun testMoveDownAllKeepsBottomElementAtBottom() {
+        val list = mutableListOf(1, 2, 3)
+
+        list.moveDownAll { it == 3 }
+
+        assertEquals(listOf(1, 2, 3), list)
+    }
+
+    @Test
+    fun testMoveUpAllWithAllAndNoneMatching() {
+        // Every element matches: each moves up one index unless already at the top,
+        // so the list rotates while the last element stays put at the boundary pass
+        val all = mutableListOf(1, 2, 3)
+
+        all.moveUpAll { true }
+
+        assertEquals(listOf(2, 3, 1), all)
+
+        val none = mutableListOf(1, 2, 3)
+
+        none.moveUpAll { it > 100 }
+
+        assertEquals(listOf(1, 2, 3), none)
+    }
+
+    @Test
+    fun testMoveDownAllWithAllAndNoneMatching() {
+        // Every element matches: each moves down one index unless already at the bottom
+        val all = mutableListOf(1, 2, 3)
+
+        all.moveDownAll { true }
+
+        assertEquals(listOf(3, 1, 2), all)
+
+        val none = mutableListOf(1, 2, 3)
+
+        none.moveDownAll { it > 100 }
+
+        assertEquals(listOf(1, 2, 3), none)
+    }
+
+    @Test
+    fun testMoveUpAllWithDuplicateMatches() {
+        val list = mutableListOf(1, 2, 1, 2)
+
+        list.moveUpAll { it == 1 }
+
+        assertEquals(listOf(1, 1, 2, 2), list)
+    }
+
+    @Test
+    fun testMoveDownAllWithDuplicateMatches() {
+        val list = mutableListOf(1, 2, 1, 2)
+
+        list.moveDownAll { it == 2 }
+
+        assertEquals(listOf(1, 1, 2, 2), list)
+    }
+
+    @Test
+    fun testMoveUpAndDownPredicateOnlyMoveFirstMatch() {
+        val list = mutableListOf(1, 2, 3, 2)
+
+        list.moveUp { it == 2 }
+
+        assertEquals(listOf(2, 1, 3, 2), list)
+
+        val list2 = mutableListOf(1, 2, 3, 2)
+
+        list2.moveDown { it == 2 }
+
+        assertEquals(listOf(1, 3, 2, 2), list2)
+    }
 }
